@@ -26,9 +26,9 @@ public interface UIController {
     @ColorInt
     int getUiColor();
 
-    boolean getUseDarkTheme();
+    int getThemeNum();
 
-    void updateUrl(@Nullable String title, boolean isLoading);
+    void updateUrl(@Nullable String title, boolean shortUrl);
 
     void updateProgress(int n);
 
@@ -68,6 +68,8 @@ public interface UIController {
 
     void bookmarkItemClicked(@NonNull HistoryItem item);
 
+    void loadUrl(String url);
+
     void closeBookmarksDrawer();
 
     void setForwardButtonEnabled(boolean enabled);
@@ -93,5 +95,4 @@ public interface UIController {
     void handleNewTab(@NonNull LightningDialogBuilder.NewTab newTabType, @NonNull String url);
 
     void handleHistoryChange();
-
 }

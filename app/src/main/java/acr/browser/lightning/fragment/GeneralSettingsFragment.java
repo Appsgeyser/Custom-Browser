@@ -19,22 +19,13 @@ import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.webkit.URLUtil;
 import android.widget.EditText;
-
-import java.util.List;
-
-import javax.inject.Inject;
 
 import acr.browser.lightning.BuildConfig;
 import acr.browser.lightning.R;
-import acr.browser.lightning.app.BrowserApp;
 import acr.browser.lightning.constant.Constants;
 import acr.browser.lightning.dialog.BrowserDialog;
-import acr.browser.lightning.search.SearchEngineProvider;
-import acr.browser.lightning.search.engine.BaseSearchEngine;
-import acr.browser.lightning.search.engine.CustomSearch;
-import acr.browser.lightning.utils.FileUtils;
+import acr.browser.lightning.download.DownloadHandler;
 import acr.browser.lightning.utils.ProxyUtils;
 import acr.browser.lightning.utils.ThemeUtils;
 import acr.browser.lightning.utils.Utils;
@@ -62,15 +53,11 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
     private int mAgentChoice;
     private String mHomepage;
 
-    @Inject SearchEngineProvider mSearchEngineProvider;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Load the preferences from an XML resource
         addPreferencesFromResource(R.xml.preference_general);
-
-        BrowserApp.getAppComponent().inject(this);
 
         mActivity = getActivity();
 
@@ -89,7 +76,6 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         CheckBoxPreference cbAds = (CheckBoxPreference) findPreference(SETTINGS_ADS);
         CheckBoxPreference cbImages = (CheckBoxPreference) findPreference(SETTINGS_IMAGES);
         CheckBoxPreference cbJsScript = (CheckBoxPreference) findPreference(SETTINGS_JAVASCRIPT);
-        CheckBoxPreference cbColorMode = (CheckBoxPreference) findPreference(SETTINGS_COLORMODE);
 
         proxy.setOnPreferenceClickListener(this);
         useragent.setOnPreferenceClickListener(this);
@@ -101,7 +87,6 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         cbAds.setOnPreferenceChangeListener(this);
         cbImages.setOnPreferenceChangeListener(this);
         cbJsScript.setOnPreferenceChangeListener(this);
-        cbColorMode.setOnPreferenceChangeListener(this);
 
         mAgentChoice = mPreferenceManager.getUserAgentChoice();
         mHomepage = mPreferenceManager.getHomepage();
@@ -119,8 +104,7 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
             mPreferenceManager.setFlashSupport(0);
         }
 
-        BaseSearchEngine currentSearchEngine = mSearchEngineProvider.getCurrentSearchEngine();
-        setSearchEngineSummary(currentSearchEngine);
+        setSearchEngineSummary(mPreferenceManager.getSearchChoice());
 
         downloadloc.setSummary(mDownloadLocation);
 
@@ -185,21 +169,20 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         cbJsScript.setChecked(enableJSBool);
         cbFlash.setChecked(flashNum > 0);
         cbAds.setChecked(BuildConfig.FULL_VERSION && mPreferenceManager.getAdBlockEnabled());
-        cbColorMode.setChecked(mPreferenceManager.getColorModeEnabled());
     }
 
-    private void showUrlPicker(@NonNull final CustomSearch customSearch) {
+    private void searchUrlPicker() {
 
         BrowserDialog.showEditText(mActivity,
-            R.string.search_engine_custom,
-            R.string.search_engine_custom,
+            R.string.custom_url,
+            R.string.custom_url,
             mPreferenceManager.getSearchUrl(),
             R.string.action_ok,
             new BrowserDialog.EditorListener() {
                 @Override
                 public void onClick(String text) {
                     mPreferenceManager.setSearchUrl(text);
-                    setSearchEngineSummary(customSearch);
+                    searchengine.setSummary(mActivity.getString(R.string.custom_url) + ": " + text);
                 }
             });
 
@@ -312,24 +295,13 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         BrowserDialog.setDialogSize(mActivity, dialog);
     }
 
-    @NonNull
-    private CharSequence[] convertSearchEngineToString(@NonNull List<BaseSearchEngine> searchEngines) {
-        CharSequence[] titles = new CharSequence[searchEngines.size()];
-
-        for (int n = 0; n < searchEngines.size(); n++) {
-            titles[n] = getString(searchEngines.get(n).getTitleRes());
-        }
-
-        return titles;
-    }
-
     private void searchDialog() {
         AlertDialog.Builder picker = new AlertDialog.Builder(mActivity);
         picker.setTitle(getResources().getString(R.string.title_search_engine));
-
-        final List<BaseSearchEngine> searchEngineList = mSearchEngineProvider.getAllSearchEngines();
-
-        CharSequence[] chars = convertSearchEngineToString(searchEngineList);
+        CharSequence[] chars = {getResources().getString(R.string.custom_url), "Google",
+            "Ask", "Bing", "Yahoo", "StartPage", "StartPage (Mobile)",
+            "DuckDuckGo (Privacy)", "DuckDuckGo Lite (Privacy)", "Baidu (Chinese)",
+            "Yandex (Russian)"};
 
         int n = mPreferenceManager.getSearchChoice();
 
@@ -337,19 +309,8 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
 
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                BaseSearchEngine searchEngine = searchEngineList.get(which);
-
-                // Store the search engine preference
-                int preferencesIndex = mSearchEngineProvider.mapSearchEngineToPreferenceIndex(searchEngine);
-                mPreferenceManager.setSearchChoice(preferencesIndex);
-
-                if (searchEngine instanceof CustomSearch) {
-                    // Show the URL picker
-                    showUrlPicker((CustomSearch) searchEngine);
-                } else {
-                    // Set the new search engine summary
-                    setSearchEngineSummary(searchEngine);
-                }
+                mPreferenceManager.setSearchChoice(which);
+                setSearchEngineSummary(which);
             }
         });
         picker.setPositiveButton(R.string.action_ok, null);
@@ -458,7 +419,7 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
     private void homePicker() {
         String currentHomepage;
         mHomepage = mPreferenceManager.getHomepage();
-        if (!URLUtil.isAboutUrl(mHomepage)) {
+        if (!mHomepage.startsWith(Constants.ABOUT)) {
             currentHomepage = mHomepage;
         } else {
             currentHomepage = "https://www.google.com";
@@ -495,8 +456,8 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
                 public void onClick(DialogInterface dialog, int which) {
                     switch (which) {
                         case 0:
-                            mPreferenceManager.setDownloadDirectory(FileUtils.DEFAULT_DOWNLOAD_PATH);
-                            downloadloc.setSummary(FileUtils.DEFAULT_DOWNLOAD_PATH);
+                            mPreferenceManager.setDownloadDirectory(DownloadHandler.DEFAULT_DOWNLOAD_PATH);
+                            downloadloc.setSummary(DownloadHandler.DEFAULT_DOWNLOAD_PATH);
                             break;
                         case 1:
                             downPicker();
@@ -575,7 +536,7 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String text = getDownload.getText().toString();
-                        text = FileUtils.addNecessarySlashes(text);
+                        text = DownloadHandler.addNecessarySlashes(text);
                         mPreferenceManager.setDownloadDirectory(text);
                         downloadloc.setSummary(text);
                     }
@@ -584,11 +545,40 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         BrowserDialog.setDialogSize(mActivity, dialog);
     }
 
-    private void setSearchEngineSummary(BaseSearchEngine baseSearchEngine) {
-        if (baseSearchEngine instanceof CustomSearch) {
-            searchengine.setSummary(mPreferenceManager.getSearchUrl());
-        } else {
-            searchengine.setSummary(getString(baseSearchEngine.getTitleRes()));
+    private void setSearchEngineSummary(int which) {
+        switch (which) {
+            case 0:
+                searchUrlPicker();
+                break;
+            case 1:
+                searchengine.setSummary("Google");
+                break;
+            case 2:
+                searchengine.setSummary("Ask");
+                break;
+            case 3:
+                searchengine.setSummary("Bing");
+                break;
+            case 4:
+                searchengine.setSummary("Yahoo");
+                break;
+            case 5:
+                searchengine.setSummary("StartPage");
+                break;
+            case 6:
+                searchengine.setSummary("StartPage (Mobile)");
+                break;
+            case 7:
+                searchengine.setSummary("DuckDuckGo");
+                break;
+            case 8:
+                searchengine.setSummary("DuckDuckGo Lite");
+                break;
+            case 9:
+                searchengine.setSummary("Baidu");
+                break;
+            case 10:
+                searchengine.setSummary("Yandex");
         }
     }
 
@@ -647,9 +637,6 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
             case SETTINGS_JAVASCRIPT:
                 mPreferenceManager.setJavaScriptEnabled(checked);
                 return true;
-            case SETTINGS_COLORMODE:
-                mPreferenceManager.setColorModeEnabled(checked);
-                return true;
             default:
                 return false;
         }
@@ -674,7 +661,7 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
 
         @Override
         public void afterTextChanged(@NonNull Editable s) {
-            if (!FileUtils.isWriteAccessAvailable(s.toString())) {
+            if (!DownloadHandler.isWriteAccessAvailable(s.toString())) {
                 this.getDownload.setTextColor(this.errorColor);
             } else {
                 this.getDownload.setTextColor(this.regularColor);

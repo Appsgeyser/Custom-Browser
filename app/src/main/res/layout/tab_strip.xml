@@ -3,25 +3,32 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="30dp"
-    android:background="@color/black"
+    android:layout_height="40dp"
+    android:id="@+id/tabs_background"
     android:orientation="horizontal"
     android:weightSum="1">
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingRight="40dp">
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/tabs_list"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:fadingEdge="horizontal"
+            android:overScrollMode="never"
+            android:scrollbars="none" />
+    </FrameLayout>
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/tabs_list"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:fadingEdge="horizontal"
-        android:overScrollMode="never"
-        android:scrollbars="none"/>
 
     <ImageView
+        android:layout_marginLeft="-35dp"
         android:id="@+id/new_tab_button"
         android:layout_width="30dp"
-        android:layout_height="match_parent"
+        android:layout_height="30dp"
+        android:layout_gravity="center_horizontal|center_vertical"
         android:background="?actionBarItemBackground"
-        app:srcCompat="@drawable/ic_action_plus"/>
+        app:srcCompat="@drawable/ic_action_plus"
+        />
 </LinearLayout>
 

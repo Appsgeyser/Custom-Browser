@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="background">
+        <item>@drawable/custom0</item>
+        <item>@drawable/custom1</item>
+        <item>@drawable/custom2</item>
+        <item>@drawable/custom3</item>
+        <item>@drawable/custom4</item>
+        <item>@drawable/custom5</item>
+        <item>@drawable/custom6</item>
+        <item>@drawable/custom7</item>
+        <item>@drawable/custom8</item>
+        <item>@drawable/custom9</item>
+        <item>@drawable/custom10</item>
+        <item>@drawable/custom11</item>
+        <item>@drawable/custom12</item>
+        <item>@drawable/custom13</item>
+        <item>@drawable/custom14</item>
+        <item>@drawable/custom15</item>
+        <item>@drawable/custom16</item>
+        <item>@drawable/custom17</item>
+    </array>
+</resources>

@@ -24,15 +24,15 @@ public abstract class ThemableSettingsActivity extends AppCompatPreferenceActivi
         mTheme = mPreferences.getUseTheme();
 
         // set the theme
-        if (mTheme == 0) {
+        if (mTheme == 0 || mTheme == 1) {
             setTheme(R.style.Theme_SettingsTheme);
-            this.getWindow().setBackgroundDrawable(new ColorDrawable(ThemeUtils.getPrimaryColor(this)));
-        } else if (mTheme == 1) {
-            setTheme(R.style.Theme_SettingsTheme_Dark);
-            this.getWindow().setBackgroundDrawable(new ColorDrawable(ThemeUtils.getPrimaryColorDark(this)));
+            this.getWindow().setBackgroundDrawable(new ColorDrawable(BrowserApp.getThemeManager().getBackgroundColor(mTheme)));
         } else if (mTheme == 2) {
+            setTheme(R.style.Theme_SettingsTheme_Dark);
+            this.getWindow().setBackgroundDrawable(new ColorDrawable(BrowserApp.getThemeManager().getBackgroundColor(mTheme)));
+        } else if (mTheme == 3) {
             setTheme(R.style.Theme_SettingsTheme_Black);
-            this.getWindow().setBackgroundDrawable(new ColorDrawable(ThemeUtils.getPrimaryColorDark(this)));
+            this.getWindow().setBackgroundDrawable(new ColorDrawable(BrowserApp.getThemeManager().getBackgroundColor(mTheme)));
         }
         super.onCreate(savedInstanceState);
 
@@ -44,7 +44,7 @@ public abstract class ThemableSettingsActivity extends AppCompatPreferenceActivi
             if (mPreferences.getUseBlackStatusBar()) {
                 getWindow().setStatusBarColor(Color.BLACK);
             } else {
-                getWindow().setStatusBarColor(ThemeUtils.getStatusBarColor(this));
+                getWindow().setStatusBarColor(BrowserApp.getThemeManager().getStatusBarColor(mPreferences.getUseTheme()));
             }
         }
     }

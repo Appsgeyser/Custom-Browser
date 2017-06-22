@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Lightning</string>
     <string name="action_new_tab">Yeni Sekme</string>
     <string name="action_share">Paylaş</string>
     <string name="action_history">Geçmiş</string>
@@ -108,7 +107,7 @@
     <string name="max_tabs">Maksimum sekme sınırına ulaşıldı</string>
     <string name="message_text_copied">Yazı panoya kopyalandı</string>
     <string name="message_link_copied">Bağlantı panoya kopyalandı</string>
-    <string name="search_engine_custom">Kişisel bağlantı</string>
+    <string name="custom_url">Kişisel bağlantı</string>
     <string name="message_blocked_local">Yerel dosyanın yüklenmesi engellendi</string>
     <string name="licenses">Açık Kaynak Lisansları</string>
     <string name="suggestion">Ara</string>

@@ -8,9 +8,9 @@ import android.text.TextUtils;
 /**
  * Simple utils for favicon fetching.
  */
-public class FaviconUtils {
+class FaviconUtils {
     @Nullable
-    public static Uri safeUri(@NonNull String url) {
+    static Uri safeUri(@NonNull String url) {
         if (TextUtils.isEmpty(url)) {
             return null;
         }

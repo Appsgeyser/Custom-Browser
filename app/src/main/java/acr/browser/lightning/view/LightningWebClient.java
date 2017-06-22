@@ -22,7 +22,6 @@ import android.view.View;
 import android.webkit.HttpAuthHandler;
 import android.webkit.MimeTypeMap;
 import android.webkit.SslErrorHandler;
-import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -101,12 +100,10 @@ public class LightningWebClient extends WebViewClient {
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public void onPageFinished(@NonNull WebView view, String url) {
-        if (view.isShown()) {
-            mUIController.updateUrl(url, false);
-            mUIController.setBackButtonEnabled(view.canGoBack());
-            mUIController.setForwardButtonEnabled(view.canGoForward());
-            view.postInvalidate();
-        }
+        mUIController.updateUrl(url, true);
+        mUIController.setBackButtonEnabled(view.canGoBack());
+        mUIController.setForwardButtonEnabled(view.canGoForward());
+        view.postInvalidate();
         if (view.getTitle() == null || view.getTitle().isEmpty()) {
             mLightningView.getTitleInfo().setTitle(mActivity.getString(R.string.untitled));
         } else {
@@ -117,15 +114,18 @@ public class LightningWebClient extends WebViewClient {
             view.evaluateJavascript(Constants.JAVASCRIPT_INVERT_PAGE, null);
         }
         mUIController.tabChanged(mLightningView);
+        mLightningView.setRefreshing(false);
     }
 
     @Override
     public void onPageStarted(WebView view, String url, Bitmap favicon) {
         mLightningView.getTitleInfo().setFavicon(null);
-        if (mLightningView.isShown()) {
-            mUIController.updateUrl(url, true);
-            mUIController.showActionBar();
+        mLightningView.setView(url);
+        if(UrlUtils.isStartPageUrl(url)){
+            mUIController.updateProgress(100);
         }
+        mUIController.updateUrl(url, false);
+        mUIController.showActionBar();
         mUIController.tabChanged(mLightningView);
     }
 
@@ -306,7 +306,7 @@ public class LightningWebClient extends WebViewClient {
             // If we are in incognito, immediately load, we don't want the url to leave the app
             return continueLoadingUrl(view, url, headers);
         }
-        if (URLUtil.isAboutUrl(url)) {
+        if (url.startsWith(Constants.ABOUT)) {
             // If this is an about page, immediately load, we don't need to leave the app
             return continueLoadingUrl(view, url, headers);
         }
@@ -361,14 +361,15 @@ public class LightningWebClient extends WebViewClient {
                 }
                 return true;
             }
-        } else if (URLUtil.isFileUrl(url) && !UrlUtils.isSpecialUrl(url)) {
+        } else if (url.startsWith(Constants.FILE)) {
             File file = new File(url.replace(Constants.FILE, ""));
 
             if (file.exists()) {
                 String newMimeType = MimeTypeMap.getSingleton()
-                    .getMimeTypeFromExtension(Utils.guessFileExtension(file.toString()));
+                        .getMimeTypeFromExtension(Utils.guessFileExtension(file.toString()));
 
-                Intent intent = new Intent(Intent.ACTION_VIEW);
+                Intent intent = new Intent();
+                intent.setAction(Intent.ACTION_VIEW);
                 intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 Uri contentUri = FileProvider.getUriForFile(mActivity, BuildConfig.APPLICATION_ID + ".fileprovider", file);
                 intent.setDataAndType(contentUri, newMimeType);
@@ -378,10 +379,8 @@ public class LightningWebClient extends WebViewClient {
                 } catch (Exception e) {
                     System.out.println("LightningWebClient: cannot open downloaded file");
                 }
-            } else {
-                Utils.showSnackbar(mActivity, R.string.message_open_download_fail);
+                return true;
             }
-            return true;
         }
         return false;
     }

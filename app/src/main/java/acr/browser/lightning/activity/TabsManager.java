@@ -9,10 +9,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.util.Log;
-import android.webkit.URLUtil;
 import android.webkit.WebView;
 
 import com.anthonycr.bonsai.Completable;
@@ -33,6 +33,7 @@ import javax.inject.Inject;
 import acr.browser.lightning.R;
 import acr.browser.lightning.app.BrowserApp;
 import acr.browser.lightning.constant.BookmarkPage;
+import acr.browser.lightning.constant.Constants;
 import acr.browser.lightning.constant.DownloadsPage;
 import acr.browser.lightning.constant.HistoryPage;
 import acr.browser.lightning.constant.StartPage;
@@ -108,7 +109,7 @@ public class TabsManager {
      * @param incognito whether or not we are in incognito mode.
      */
     @NonNull
-    public synchronized Completable initializeTabs(@NonNull final Activity activity,
+    public synchronized Completable initializeTabs(@NonNull final FragmentActivity activity,
                                                    @Nullable final Intent intent,
                                                    final boolean incognito) {
         return Completable.create(new CompletableAction() {
@@ -148,7 +149,7 @@ public class TabsManager {
 
     }
 
-    private void restoreLostTabs(@Nullable final String url, @NonNull final Activity activity,
+    private void restoreLostTabs(@Nullable final String url, @NonNull final FragmentActivity activity,
                                  @NonNull final CompletableSubscriber subscriber) {
 
         restoreState()
@@ -174,26 +175,17 @@ public class TabsManager {
                                 });
                         } else if (UrlUtils.isDownloadsUrl(url)) {
                             new DownloadsPage().getDownloadsPage()
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(Schedulers.main())
-                                .subscribe(new SingleOnSubscribe<String>() {
-                                    @Override
-                                    public void onItem(@Nullable String item) {
-                                        Preconditions.checkNonNull(item);
-                                        tab.loadUrl(item);
-                                    }
-                                });
+                                    .subscribeOn(Schedulers.io())
+                                    .observeOn(Schedulers.main())
+                                    .subscribe(new SingleOnSubscribe<String>() {
+                                        @Override
+                                        public void onItem(@Nullable String item) {
+                                            Preconditions.checkNonNull(item);
+                                            tab.loadUrl(item);
+                                        }
+                                    });
                         } else if (UrlUtils.isStartPageUrl(url)) {
-                            new StartPage().getHomepage()
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(Schedulers.main())
-                                .subscribe(new SingleOnSubscribe<String>() {
-                                    @Override
-                                    public void onItem(@Nullable String item) {
-                                        Preconditions.checkNonNull(item);
-                                        tab.loadUrl(item);
-                                    }
-                                });
+                            tab.loadStartpage();
                         } else if (UrlUtils.isHistoryUrl(url)) {
                             new HistoryPage().getHistoryPage()
                                 .subscribeOn(Schedulers.io())
@@ -214,7 +206,7 @@ public class TabsManager {
                 @Override
                 public void onComplete() {
                     if (url != null) {
-                        if (URLUtil.isFileUrl(url)) {
+                        if (url.startsWith(Constants.FILE)) {
                             AlertDialog.Builder builder = new AlertDialog.Builder(activity);
                             Dialog dialog = builder.setCancelable(true)
                                 .setTitle(R.string.title_warning)
@@ -403,7 +395,7 @@ public class TabsManager {
      * @return a valid initialized tab.
      */
     @NonNull
-    public synchronized LightningView newTab(@NonNull final Activity activity,
+    public synchronized LightningView newTab(@NonNull final FragmentActivity activity,
                                              @Nullable final String url,
                                              final boolean isIncognito) {
         Log.d(TAG, "New tab");

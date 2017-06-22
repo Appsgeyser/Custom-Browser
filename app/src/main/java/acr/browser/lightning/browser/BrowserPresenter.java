@@ -1,13 +1,12 @@
 package acr.browser.lightning.browser;
 
-import android.app.Activity;
-import android.app.Application;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
-import android.webkit.URLUtil;
+import android.view.View;
 
 import com.anthonycr.bonsai.CompletableOnSubscribe;
 import com.anthonycr.bonsai.Schedulers;
@@ -18,12 +17,9 @@ import acr.browser.lightning.BuildConfig;
 import acr.browser.lightning.R;
 import acr.browser.lightning.activity.TabsManager;
 import acr.browser.lightning.app.BrowserApp;
-import acr.browser.lightning.constant.BookmarkPage;
 import acr.browser.lightning.constant.Constants;
-import acr.browser.lightning.constant.StartPage;
 import acr.browser.lightning.controller.UIController;
 import acr.browser.lightning.preference.PreferenceManager;
-
 import acr.browser.lightning.utils.UrlUtils;
 import acr.browser.lightning.view.LightningView;
 
@@ -36,14 +32,15 @@ public class BrowserPresenter {
 
     private static final String TAG = "BrowserPresenter";
 
-    @NonNull private final TabsManager mTabsModel;
-    @Inject Application mApplication;
-    @Inject PreferenceManager mPreferences;
-
-    @NonNull private final BrowserView mView;
-    @Nullable private LightningView mCurrentTab;
-
+    @NonNull
+    private final TabsManager mTabsModel;
+    @NonNull
+    private final BrowserView mView;
     private final boolean mIsIncognito;
+    @Inject
+    PreferenceManager mPreferences;
+    @Nullable
+    private LightningView mCurrentTab;
     private boolean mShouldClose;
 
     public BrowserPresenter(@NonNull BrowserView view, boolean isIncognito) {
@@ -66,17 +63,17 @@ public class BrowserPresenter {
      * @param intent the intent to handle, may be null.
      */
     public void setupTabs(@Nullable Intent intent) {
-        mTabsModel.initializeTabs((Activity) mView, intent, mIsIncognito)
-            .subscribeOn(Schedulers.main())
-            .subscribe(new CompletableOnSubscribe() {
-                @Override
-                public void onComplete() {
-                    // At this point we always have at least a tab in the tab manager
-                    mView.notifyTabViewInitialized();
-                    mView.updateTabNumber(mTabsModel.size());
-                    tabChanged(mTabsModel.last());
-                }
-            });
+        mTabsModel.initializeTabs((FragmentActivity) mView, intent, mIsIncognito)
+                .subscribeOn(Schedulers.main())
+                .subscribe(new CompletableOnSubscribe() {
+                    @Override
+                    public void onComplete() {
+                        // At this point we always have at least a tab in the tab manager
+                        mView.notifyTabViewInitialized();
+                        mView.updateTabNumber(mTabsModel.size());
+                        tabChanged(mTabsModel.last());
+                    }
+                });
     }
 
     /**
@@ -121,8 +118,8 @@ public class BrowserPresenter {
                 mView.updateProgress(newTab.getProgress());
                 mView.setBackButtonEnabled(newTab.canGoBack());
                 mView.setForwardButtonEnabled(newTab.canGoForward());
-                mView.updateUrl(newTab.getUrl(), false);
-                mView.setTabView(newTab.getWebView());
+                mView.updateUrl(newTab.getUrl(), true);
+                mView.setTabView(newTab);
                 int index = mTabsModel.indexOfTab(newTab);
                 if (index >= 0) {
                     mView.notifyTabViewChanged(mTabsModel.indexOfTab(newTab));
@@ -148,19 +145,6 @@ public class BrowserPresenter {
 
     }
 
-    @NonNull
-    private String mapHomepageToCurrentUrl() {
-        String homepage = mPreferences.getHomepage();
-        switch (homepage) {
-            case Constants.SCHEME_HOMEPAGE:
-                return Constants.FILE + StartPage.getStartPageFile(mApplication);
-            case Constants.SCHEME_BOOKMARKS:
-                return Constants.FILE + BookmarkPage.getBookmarkPage(mApplication, null);
-            default:
-                return homepage;
-        }
-    }
-
     /**
      * Deletes the tab at the specified position.
      *
@@ -175,16 +159,30 @@ public class BrowserPresenter {
             return;
         }
 
+        View.OnClickListener onClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mPreferences.getSavedUrl() == null) {
+                    newTab(null, mIsIncognito);
+                } else {
+                    UIController uiController = (UIController) mView;
+                    uiController.newTabButtonLongClicked();
+                }
+                mView.notifyTabViewAdded();
+
+            }
+        };
+
         if (!UrlUtils.isSpecialUrl(tabToDelete.getUrl()) && !mIsIncognito) {
             mPreferences.setSavedUrl(tabToDelete.getUrl());
         }
-
+        LightningView deletedTab = mTabsModel.getTabAtPosition(position);
         final boolean isShown = tabToDelete.isShown();
         boolean shouldClose = mShouldClose && isShown && tabToDelete.isNewTab();
         final LightningView currentTab = mTabsModel.getCurrentTab();
         if (mTabsModel.size() == 1 && currentTab != null &&
-            URLUtil.isFileUrl(currentTab.getUrl()) &&
-            currentTab.getUrl().equals(mapHomepageToCurrentUrl())) {
+                (UrlUtils.isStartPageUrl(currentTab.getUrl()) ||
+                        currentTab.getUrl().equals(mPreferences.getHomepage()))) {
             mView.closeActivity();
             return;
         } else {
@@ -199,6 +197,9 @@ public class BrowserPresenter {
 
         final LightningView afterTab = mTabsModel.getCurrentTab();
         mView.notifyTabViewRemoved(position);
+        if (deletedTab != null) {
+            mView.notifyTabClosed(deletedTab.getTitle(), onClickListener);
+        }
 
         if (afterTab == null) {
             mView.closeBrowser();
@@ -250,7 +251,7 @@ public class BrowserPresenter {
                         tab.loadUrl(url);
                     }
                 } else if (url != null) {
-                    if (URLUtil.isFileUrl(url)) {
+                    if (url.startsWith(Constants.FILE)) {
                         mView.showBlockedLocalFileDialog(new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
@@ -341,9 +342,11 @@ public class BrowserPresenter {
             return false;
         }
 
+        mView.showInterstitialAd();
+
         Log.d(TAG, "New tab, show: " + show);
 
-        LightningView startingTab = mTabsModel.newTab((Activity) mView, url, mIsIncognito);
+        LightningView startingTab = mTabsModel.newTab((FragmentActivity) mView, url, mIsIncognito);
         if (mTabsModel.size() == 1) {
             startingTab.resumeTimers();
         }

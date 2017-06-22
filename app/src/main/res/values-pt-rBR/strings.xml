@@ -16,7 +16,6 @@
 
 <resources>
 
-    <string name="app_name">Lightning</string>
     <string name="action_new_tab">Nova aba</string>
     <string name="action_share">Compartilhar</string>
     <string name="action_history">Histórico</string>
@@ -118,7 +117,7 @@
     <string name="max_tabs">Atingido número máximo de abas</string>
     <string name="message_text_copied">Texto copiado para a área de transferência</string>
     <string name="message_link_copied">Link copiado para a área de transferência</string>
-    <string name="search_engine_custom">URL personalizado</string>
+    <string name="custom_url">URL personalizado</string>
     <string name="message_blocked_local">Bloqueado o carregamento do arquivo local</string>
     <string name="licenses">Licenças Open Source</string>
     <string name="suggestion">Pesquisar por</string>

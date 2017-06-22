@@ -80,7 +80,7 @@ public class ReadingActivity extends AppCompatActivity {
             getWindow().setBackgroundDrawable(new ColorDrawable(color));
         } else {
             setTheme(R.style.Theme_SettingsTheme);
-            color = ThemeUtils.getPrimaryColor(this);
+            color = BrowserApp.getThemeManager().getPrimaryColor(mPreferences.getUseTheme());
             getWindow().setBackgroundDrawable(new ColorDrawable(color));
         }
         super.onCreate(savedInstanceState);

@@ -28,7 +28,7 @@ public class SettingsActivity extends ThemableSettingsActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // this is a workaround for the Toolbar in PreferenceActitivty
+        // this is a workaround for the Toolbar in PreferenceActivity
         ViewGroup root = findViewById(android.R.id.content);
         LinearLayout content = (LinearLayout) root.getChildAt(0);
         LinearLayout toolbarContainer = (LinearLayout) View.inflate(this, R.layout.toolbar_settings, null);

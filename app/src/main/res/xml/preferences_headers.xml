@@ -20,17 +20,6 @@
         android:summary="@string/settings_about_explain"
         android:title="@string/settings_about"/>
     <header
-        android:summary="@string/faq_description"
-        android:title="@string/faq">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:data="http://acrdevelopment.org/lightning/faq">
-            <extra
-                android:name="SOURCE"
-                android:value="SELF"/>
-        </intent>
-    </header>
-    <header
         android:fragment="acr.browser.lightning.fragment.DebugSettingsFragment"
         android:title="@string/debug_title"/>
 </preference-headers>

@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import acr.browser.lightning.R;
+import acr.browser.lightning.app.BrowserApp;
 import acr.browser.lightning.utils.ThemeUtils;
 import acr.browser.lightning.utils.Utils;
 
@@ -46,22 +47,12 @@ class LightningViewTitle {
      * Helper method to initialize the DEFAULT_ICON variables
      *
      * @param context   the context needed to initialize the Bitmap.
-     * @param darkTheme whether the icon should be themed dark or not.
+     * @param theme theme.
      * @return a not null icon.
      */
     @NonNull
-    private static Bitmap getDefaultIcon(@NonNull Context context, boolean darkTheme) {
-        if (darkTheme) {
-            if (DEFAULT_DARK_ICON == null) {
-                DEFAULT_DARK_ICON = ThemeUtils.getThemedBitmap(context, R.drawable.ic_webpage, true);
-            }
-            return DEFAULT_DARK_ICON;
-        } else {
-            if (DEFAULT_LIGHT_ICON == null) {
-                DEFAULT_LIGHT_ICON = ThemeUtils.getThemedBitmap(context, R.drawable.ic_webpage, false);
-            }
-            return DEFAULT_LIGHT_ICON;
-        }
+    private static Bitmap getDefaultIcon(@NonNull Context context, int theme) {
+        return BrowserApp.getThemeManager().getThemedBitmap(context, R.drawable.ic_webpage, theme);
     }
 
     /**
@@ -96,9 +87,9 @@ class LightningViewTitle {
      * @return the favicon or a default if that is null.
      */
     @NonNull
-    public Bitmap getFavicon(boolean darkTheme) {
+    public Bitmap getFavicon(int theme) {
         if (mFavicon == null) {
-            return getDefaultIcon(mContext, darkTheme);
+            return getDefaultIcon(mContext, theme);
         }
         return mFavicon;
     }

@@ -13,7 +13,7 @@
     <FrameLayout
         android:id="@+id/tabs_toolbar_container"
         android:layout_width="match_parent"
-        android:layout_height="30dp"/>
+        android:layout_height="40dp"/>
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar"

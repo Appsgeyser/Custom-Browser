@@ -10,11 +10,15 @@ import acr.browser.lightning.utils.Preconditions;
 
 public class DownloadItem implements Comparable<DownloadItem> {
 
-    @NonNull private String mUrl = "";
+    // private variables
+    @NonNull
+    private String mUrl = "";
 
-    @NonNull private String mTitle = "";
+    @NonNull
+    private String mTitle = "";
 
-    @NonNull private String mContentSize = "";
+    @NonNull
+    private String mContentSize = "";
 
     public DownloadItem() {}
 
@@ -62,7 +66,7 @@ public class DownloadItem implements Comparable<DownloadItem> {
 
     @Override
     public int compareTo(@NonNull DownloadItem another) {
-        int compare = this.mTitle.compareToIgnoreCase(another.mTitle);
+        int compare = this.mTitle.compareTo(another.mTitle);
         if (compare == 0) {
             return this.mUrl.compareTo(another.mUrl);
         }
@@ -70,24 +74,23 @@ public class DownloadItem implements Comparable<DownloadItem> {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(@Nullable Object object) {
 
-        DownloadItem that = (DownloadItem) o;
+        if (this == object) return true;
+        if (object == null) return false;
+        if (!(object instanceof DownloadItem)) return false;
 
-        if (!mUrl.equals(that.mUrl)) return false;
-        if (!mTitle.equals(that.mTitle)) return false;
+        DownloadItem that = (DownloadItem) object;
 
-        return mContentSize.equals(that.mContentSize);
-
+        return this.mTitle.equals(that.mTitle) && this.mUrl.equals(that.mUrl)
+                && this.mContentSize.equals(that.mContentSize);
     }
 
     @Override
     public int hashCode() {
+
         int result = mUrl.hashCode();
         result = 31 * result + mTitle.hashCode();
-        result = 31 * result + mContentSize.hashCode();
 
         return result;
     }

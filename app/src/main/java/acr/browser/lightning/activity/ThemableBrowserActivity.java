@@ -16,7 +16,8 @@ import acr.browser.lightning.utils.ThemeUtils;
 
 public abstract class ThemableBrowserActivity extends AppCompatActivity {
 
-    @Inject PreferenceManager mPreferences;
+    @Inject
+    PreferenceManager mPreferences;
 
     private int mTheme;
     private boolean mShowTabsInDrawer;
@@ -27,11 +28,15 @@ public abstract class ThemableBrowserActivity extends AppCompatActivity {
         BrowserApp.getAppComponent().inject(this);
         mTheme = mPreferences.getUseTheme();
         mShowTabsInDrawer = mPreferences.getShowTabsInDrawer(!isTablet());
-
+        if (isIncognito()) {
+            mTheme = 2;
+        }
         // set the theme
-        if (mTheme == 1) {
-            setTheme(R.style.Theme_DarkTheme);
+        if (mTheme == 0 || mTheme == 1) {
+            setTheme(R.style.Theme_LightTheme);
         } else if (mTheme == 2) {
+            setTheme(R.style.Theme_DarkTheme);
+        } else if (mTheme == 3) {
             setTheme(R.style.Theme_BlackTheme);
         }
         super.onCreate(savedInstanceState);
@@ -39,12 +44,18 @@ public abstract class ThemableBrowserActivity extends AppCompatActivity {
         resetPreferences();
     }
 
+    protected abstract boolean isIncognito();
+
+    public PreferenceManager getmPreferences() {
+        return mPreferences;
+    }
+
     private void resetPreferences() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             if (mPreferences.getUseBlackStatusBar()) {
                 getWindow().setStatusBarColor(Color.BLACK);
             } else {
-                getWindow().setStatusBarColor(ThemeUtils.getStatusBarColor(this));
+                getWindow().setStatusBarColor(BrowserApp.getThemeManager().getStatusBarColor(mTheme));
             }
         }
     }
@@ -74,6 +85,9 @@ public abstract class ThemableBrowserActivity extends AppCompatActivity {
         resetPreferences();
         mShouldRunOnResumeActions = true;
         int theme = mPreferences.getUseTheme();
+        if (isIncognito()) {
+            theme = 2;
+        }
         boolean drawerTabs = mPreferences.getShowTabsInDrawer(!isTablet());
         if (theme != mTheme || mShowTabsInDrawer != drawerTabs) {
             restart();

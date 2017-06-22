@@ -27,17 +27,6 @@ public class ThemeUtils {
     private static final TypedValue sTypedValue = new TypedValue();
 
     /**
-     * Gets the primary color of the current theme.
-     *
-     * @param context the context to get the theme from.
-     * @return the primary color of the current theme.
-     */
-    @ColorInt
-    public static int getPrimaryColor(@NonNull Context context) {
-        return getColor(context, R.attr.colorPrimary);
-    }
-
-    /**
      * Gets the primary dark color of the current theme.
      *
      * @param context the context to get the theme from.
@@ -46,30 +35,6 @@ public class ThemeUtils {
     @ColorInt
     public static int getPrimaryColorDark(@NonNull Context context) {
         return getColor(context, R.attr.colorPrimaryDark);
-    }
-
-    /**
-     * Gets the accent color of the current theme.
-     *
-     * @param context the context to get the theme from.
-     * @return the accent color of the current theme.
-     */
-    @ColorInt
-    public static int getAccentColor(@NonNull Context context) {
-        return getColor(context, R.attr.colorAccent);
-    }
-
-    /**
-     * Gets the color of the status bar as set in styles
-     * for the current theme.
-     *
-     * @param context the context to get the theme from.
-     * @return the status bar color of the current theme.
-     */
-    @ColorInt
-    @TargetApi(21)
-    public static int getStatusBarColor(@NonNull Context context) {
-        return getColor(context, android.R.attr.statusBarColor);
     }
 
     /**
@@ -193,18 +158,6 @@ public class ThemeUtils {
         drawable.mutate();
         drawable.setColorFilter(color, PorterDuff.Mode.SRC_IN);
         return drawable;
-    }
-
-    /**
-     * The text hint color for dark theme or light theme.
-     *
-     * @param dark true for a text color suitable for use with a dark theme,
-     *             false for a text color suitable for use with a light theme.
-     * @return a text color.
-     */
-    @ColorInt
-    public static int getThemedTextHintColor(boolean dark) {
-        return 0x80ffffff & (dark ? Color.WHITE : Color.BLACK);
     }
 
     /**

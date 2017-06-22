@@ -8,9 +8,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
+import android.webkit.URLUtil;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.CheckBox;
 import android.widget.EditText;
 
 import com.anthonycr.bonsai.CompletableOnSubscribe;
@@ -29,13 +32,13 @@ import acr.browser.lightning.constant.Constants;
 import acr.browser.lightning.controller.UIController;
 import acr.browser.lightning.database.HistoryItem;
 import acr.browser.lightning.database.bookmark.BookmarkModel;
+import acr.browser.lightning.database.downloads.DownloadItem;
 import acr.browser.lightning.database.downloads.DownloadsModel;
 import acr.browser.lightning.database.history.HistoryModel;
-import acr.browser.lightning.download.DownloadHandler;
 import acr.browser.lightning.preference.PreferenceManager;
 import acr.browser.lightning.utils.IntentUtils;
 import acr.browser.lightning.utils.Preconditions;
-import acr.browser.lightning.utils.UrlUtils;
+import acr.browser.lightning.utils.Utils;
 
 /**
  * TODO Rename this class it doesn't build dialogs only for bookmarks
@@ -53,9 +56,7 @@ public class LightningDialogBuilder {
 
     @Inject BookmarkModel mBookmarkManager;
     @Inject DownloadsModel mDownloadsModel;
-    @Inject HistoryModel mHistoryModel;
     @Inject PreferenceManager mPreferenceManager;
-    @Inject DownloadHandler mDownloadHandler;
 
     @Inject
     public LightningDialogBuilder() {
@@ -73,7 +74,7 @@ public class LightningDialogBuilder {
                                                     @NonNull final UIController uiController,
                                                     @NonNull final String url) {
         final HistoryItem item;
-        if (UrlUtils.isBookmarkUrl(url)) {
+        if (url.startsWith(Constants.FILE) && url.endsWith(BookmarkPage.FILENAME)) {
             // TODO hacky, make a better bookmark mechanism in the future
             final Uri uri = Uri.parse(url);
             final String filename = uri.getLastPathSegment();
@@ -91,7 +92,6 @@ public class LightningDialogBuilder {
                 .subscribe(new SingleOnSubscribe<HistoryItem>() {
                     @Override
                     public void onItem(@Nullable HistoryItem historyItem) {
-                        // TODO: 6/14/17 figure out solution to case where slashes get appended to root urls causing the item to be null
                         if (historyItem != null) {
                             showLongPressedDialogForBookmarkUrl(activity, uiController, historyItem);
                         }
@@ -193,6 +193,8 @@ public class LightningDialogBuilder {
         editBookmarkDialog.setTitle(R.string.title_edit_bookmark);
         final View dialogLayout = View.inflate(activity, R.layout.dialog_edit_bookmark, null);
         final EditText getTitle = dialogLayout.findViewById(R.id.bookmark_title);
+        final CheckBox showOnHomePage = dialogLayout.findViewById(R.id.showOnHomePage);
+        showOnHomePage.setChecked(item.isShowOnMainScreen());
         getTitle.setText(item.getTitle());
         final EditText getUrl = dialogLayout.findViewById(R.id.bookmark_url);
         getUrl.setText(item.getUrl());
@@ -220,6 +222,7 @@ public class LightningDialogBuilder {
                             public void onClick(DialogInterface dialog, int which) {
                                 HistoryItem editedItem = new HistoryItem();
                                 editedItem.setTitle(getTitle.getText().toString());
+                                editedItem.setShowOnMainScreen(showOnHomePage.isChecked());
                                 editedItem.setUrl(getUrl.getText().toString());
                                 editedItem.setUrl(getUrl.getText().toString());
                                 editedItem.setFolder(getFolder.getText().toString());
@@ -333,7 +336,7 @@ public class LightningDialogBuilder {
             new BrowserDialog.Item(R.string.dialog_remove_from_history) {
                 @Override
                 public void onClick() {
-                    mHistoryModel.deleteHistoryItem(url)
+                    HistoryModel.deleteHistoryItem(url)
                         .subscribeOn(Schedulers.io())
                         .observeOn(Schedulers.main())
                         .subscribe(new CompletableOnSubscribe() {
@@ -385,7 +388,16 @@ public class LightningDialogBuilder {
             new BrowserDialog.Item(R.string.dialog_download_image) {
                 @Override
                 public void onClick() {
-                    mDownloadHandler.onDownloadStart(activity, mPreferenceManager, url, userAgent, "attachment", null, "");
+                    Utils.downloadFile(activity, mPreferenceManager, url, userAgent, "attachment");
+
+                    mDownloadsModel.addDownloadIfNotExists(new DownloadItem(url, URLUtil.guessFileName(url, null, null), ""))
+                        .subscribe(new SingleOnSubscribe<Boolean>() {
+                            @Override
+                            public void onItem(@Nullable Boolean item) {
+                                if (item != null && !item)
+                                    Log.i(TAG, "error saving download to database");
+                            }
+                        });
                 }
             });
     }

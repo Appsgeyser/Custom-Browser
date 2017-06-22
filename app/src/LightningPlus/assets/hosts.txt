@@ -16676,7 +16676,6 @@
 127.0.0.1	ads.appia.com
 127.0.0.1	ads.applelinks.com
 127.0.0.1	ads.appnext.com
-127.0.0.1	ads.appsgeyser.com
 127.0.0.1	ads.arcuspubblicita.it
 127.0.0.1	ads.arrl.org
 127.0.0.1	ads.as4x.tmcs.net
@@ -35794,7 +35793,6 @@
 127.0.0.1	pureresults.go2cloud.org
 127.0.0.1	puretec.de
 127.0.0.1	purgrobi.com
-127.0.0.1	push.appsgeyser.com
 127.0.0.1	push.cdnads.com
 127.0.0.1	putbid.net
 127.0.0.1	pv.sogou.com
@@ -37644,7 +37642,6 @@
 127.0.0.1	spixel.adsafeprotected.com
 127.0.0.1	spixl.ivwbox.de
 127.0.0.1	spixlcont.ivwbox.de
-127.0.0.1	splash.appsgeyser.com
 127.0.0.1	splashpageadvertising.com
 127.0.0.1	splitter.ndsplitter.com
 127.0.0.1	sponsorads.de
@@ -37876,7 +37873,6 @@
 127.0.0.1	stat.active24stats.nl
 127.0.0.1	stat.adlabs.ru
 127.0.0.1	stat.alibaba.com
-127.0.0.1	stat.appsgeyser.com
 127.0.0.1	stat.bilibili.tv
 127.0.0.1	stat.caijing.com.cn
 127.0.0.1	stat.china.alibaba.com
@@ -38119,7 +38115,6 @@
 127.0.0.1	stats.adultplex.com
 127.0.0.1	stats.adultrevenueservice.com
 127.0.0.1	stats.applifier.com
-127.0.0.1	stats.appsgeyser.com
 127.0.0.1	stats.apptornado.com
 127.0.0.1	stats.ars4real.com
 127.0.0.1	stats.av.de

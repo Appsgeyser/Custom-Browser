@@ -34,12 +34,17 @@ abstract class BaseSuggestionsModel {
 
     static final int MAX_RESULTS = 5;
     private static final long INTERVAL_DAY = TimeUnit.DAYS.toSeconds(1);
-    @NonNull private static final String DEFAULT_LANGUAGE = "en";
+    @NonNull
+    private static final String DEFAULT_LANGUAGE = "en";
 
-    @NonNull private final OkHttpClient mHttpClient;
-    @NonNull private final CacheControl mCacheControl;
-    @NonNull private final String mEncoding;
-    @NonNull private final String mLanguage;
+    @NonNull
+    private final OkHttpClient mHttpClient;
+    @NonNull
+    private final CacheControl mCacheControl;
+    @NonNull
+    private final String mEncoding;
+    @NonNull
+    private final String mLanguage;
 
     @NonNull
     protected abstract String createQueryUrl(@NonNull String query, @NonNull String language);
@@ -51,9 +56,9 @@ abstract class BaseSuggestionsModel {
         mLanguage = getLanguage();
         File suggestionsCache = new File(application.getCacheDir(), "suggestion_responses");
         mHttpClient = new OkHttpClient.Builder()
-            .cache(new Cache(suggestionsCache, FileUtils.megabytesToBytes(1)))
-            .addNetworkInterceptor(REWRITE_CACHE_CONTROL_INTERCEPTOR)
-            .build();
+                .cache(new Cache(suggestionsCache, FileUtils.megabytesToBytes(1)))
+                .addNetworkInterceptor(REWRITE_CACHE_CONTROL_INTERCEPTOR)
+                .build();
         mCacheControl = new CacheControl.Builder().maxStale(1, TimeUnit.DAYS).build();
     }
 
@@ -127,8 +132,8 @@ abstract class BaseSuggestionsModel {
         public Response intercept(@NonNull Chain chain) throws IOException {
             Response originalResponse = chain.proceed(chain.request());
             return originalResponse.newBuilder()
-                .header("cache-control", "max-age=" + INTERVAL_DAY + ", max-stale=" + INTERVAL_DAY)
-                .build();
+                    .header("cache-control", "max-age=" + INTERVAL_DAY + ", max-stale=" + INTERVAL_DAY)
+                    .build();
         }
     };
 

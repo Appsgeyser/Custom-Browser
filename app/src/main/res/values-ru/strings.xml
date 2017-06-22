@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Молния</string>
     <string name="action_new_tab">Создать вкладку</string>
     <string name="action_share">Отправить ссылку</string>
     <string name="action_history">История</string>
@@ -42,6 +41,7 @@
     <string name="clear_history">Очистить историю</string>
     <string name="dialog_image">Выберите действие для изображения</string>
     <string name="action_download">Загрузить</string>
+    <string name="action_downloads">Загрузики</string>
     <string name="action_open">Открыть</string>
     <string name="dialog_link">Выберите действие для адреса</string>
     <string name="dialog_title_share">Способ передачи</string>
@@ -107,7 +107,7 @@
     <string name="max_tabs">Достигнуто максимальное число вкладок</string>
     <string name="message_text_copied">Текст скопирован в буфер обмена</string>
     <string name="message_link_copied">Ссылка скопирована в буфер обмена</string>
-    <string name="search_engine_custom">Пользовательский URL</string>
+    <string name="custom_url">Пользовательский URL</string>
     <string name="message_blocked_local">Локальный файл недоступен для загрузки</string>
     <string name="licenses">Open Source Licenses</string>
     <string name="suggestion">Искать</string>
@@ -223,4 +223,5 @@
     <string name="debug_title">Настройки отладки</string>
     <string name="debug_leak_canary">LeakCanary</string>
     <string name="app_restart">Чтобы изменения вступили в силу, необходимо перезапустить приложение.</string>
+    <string name="express_panel">Экспресс-панель</string>
 </resources>

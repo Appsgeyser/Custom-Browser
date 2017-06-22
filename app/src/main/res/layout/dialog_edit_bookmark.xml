@@ -30,4 +30,10 @@
         android:hint="@string/folder"
         android:maxLines="1"
         android:singleLine="true"/>
+
+    <CheckBox
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Show on home page"
+        android:id="@+id/showOnHomePage"/>
 </LinearLayout>

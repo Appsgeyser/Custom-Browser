@@ -10,7 +10,7 @@ import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.IdRes;
@@ -42,7 +42,6 @@ import acr.browser.lightning.fragment.anim.HorizontalItemAnimator;
 import acr.browser.lightning.fragment.anim.VerticalItemAnimator;
 import acr.browser.lightning.preference.PreferenceManager;
 import acr.browser.lightning.utils.DrawableUtils;
-import acr.browser.lightning.utils.ThemeUtils;
 import acr.browser.lightning.utils.Utils;
 import acr.browser.lightning.view.BackgroundDrawable;
 import acr.browser.lightning.view.LightningView;
@@ -79,19 +78,25 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
     private static final String VERTICAL_MODE = TAG + ".VERTICAL_MODE";
     private static final String IS_INCOGNITO = TAG + ".IS_INCOGNITO";
 
-    private boolean mIsIncognito, mDarkTheme;
+    private boolean mIsIncognito;
+    private int theme;
     private int mIconColor;
     private boolean mColorMode = true;
     private boolean mShowInNavigationDrawer;
 
-    @Nullable private LightningViewAdapter mTabsAdapter;
+    @Nullable
+    private LightningViewAdapter mTabsAdapter;
     private UIController mUiController;
 
-    @BindView(R.id.tabs_list) RecyclerView mRecyclerView;
+    @BindView(R.id.tabs_list)
+    RecyclerView mRecyclerView;
+    @BindView(R.id.tabs_background)
+    LinearLayout tabsBackground;
     private Unbinder mUnbinder;
 
     private TabsManager mTabsManager;
-    @Inject PreferenceManager mPreferences;
+    @Inject
+    PreferenceManager mPreferences;
 
     public TabsFragment() {
         BrowserApp.getAppComponent().inject(this);
@@ -106,12 +111,13 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
         mTabsManager = mUiController.getTabModel();
         mIsIncognito = arguments.getBoolean(IS_INCOGNITO, false);
         mShowInNavigationDrawer = arguments.getBoolean(VERTICAL_MODE, true);
-        mDarkTheme = mPreferences.getUseTheme() != 0 || mIsIncognito;
+        theme =  mPreferences.getUseTheme();
+        if (mIsIncognito) {
+            theme = 2;
+        }
         mColorMode = mPreferences.getColorModeEnabled();
-        mColorMode &= !mDarkTheme;
-        mIconColor = mDarkTheme ?
-            ThemeUtils.getIconDarkThemeColor(context) :
-            ThemeUtils.getIconLightThemeColor(context);
+        mColorMode &= !(theme > 1);
+        mIconColor = BrowserApp.getThemeManager().getIconColor(theme);
     }
 
     @Nullable
@@ -122,6 +128,12 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
         if (mShowInNavigationDrawer) {
             view = inflater.inflate(R.layout.tab_drawer, container, false);
             layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
+
+            view.findViewById(R.id.tab_title_panel).setBackgroundColor(BrowserApp.getThemeManager().getPrimarydarkColor(theme));
+            ((TextView)view.findViewById(R.id.tab_title)).setTextColor(BrowserApp.getThemeManager().getIconColor(theme));
+            view.findViewById(R.id.tabs_list).setBackgroundColor(BrowserApp.getThemeManager().getPrimaryColor(theme));
+            view.findViewById(R.id.bottomPanel).setBackgroundColor(BrowserApp.getThemeManager().getPrimarydarkColor(theme));
+
             setupFrameLayoutButton(view, R.id.tab_header_button, R.id.plusIcon);
             setupFrameLayoutButton(view, R.id.new_tab_button, R.id.icon_plus);
             setupFrameLayoutButton(view, R.id.action_back, R.id.icon_back);
@@ -131,7 +143,7 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
             view = inflater.inflate(R.layout.tab_strip, container, false);
             layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
             ImageView newTab = view.findViewById(R.id.new_tab_button);
-            newTab.setColorFilter(ThemeUtils.getIconDarkThemeColor(getActivity()));
+            newTab.setColorFilter(BrowserApp.getThemeManager().getIconColor(0));
             newTab.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -153,12 +165,15 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
         animator.setChangeDuration(0);
         animator.setRemoveDuration(200);
         animator.setMoveDuration(200);
-        mRecyclerView.setLayerType(View.LAYER_TYPE_NONE, null);
+        //mRecyclerView.setLayerType(View.LAYER_TYPE_NONE, null);
         mRecyclerView.setItemAnimator(animator);
         mRecyclerView.setLayoutManager(layoutManager);
         mTabsAdapter = new LightningViewAdapter(mShowInNavigationDrawer);
         mRecyclerView.setAdapter(mTabsAdapter);
-        mRecyclerView.setHasFixedSize(true);
+        //mRecyclerView.setHasFixedSize(true);
+        if (tabsBackground != null) {
+            tabsBackground.setBackgroundColor(BrowserApp.getThemeManager().getStatusBarColor(theme));
+        }
 
         return view;
     }
@@ -210,12 +225,14 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
         if (activity == null) {
             return;
         }
-        mDarkTheme = mPreferences.getUseTheme() != 0 || mIsIncognito;
         mColorMode = mPreferences.getColorModeEnabled();
-        mColorMode &= !mDarkTheme;
-        mIconColor = mDarkTheme ?
-            ThemeUtils.getIconDarkThemeColor(activity) :
-            ThemeUtils.getIconLightThemeColor(activity);
+        theme =  mPreferences.getUseTheme();
+        if (mIsIncognito) {
+            theme = 2;
+        }
+        mColorMode = mPreferences.getColorModeEnabled();
+        mColorMode &= !(theme > 1);
+        mIconColor = BrowserApp.getThemeManager().getIconColor(theme);
         if (mTabsAdapter != null) {
             mTabsAdapter.notifyDataSetChanged();
         }
@@ -285,8 +302,10 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
     private class LightningViewAdapter extends RecyclerView.Adapter<LightningViewAdapter.LightningViewHolder> {
 
         private final int mLayoutResourceId;
-        @Nullable private final Drawable mBackgroundTabDrawable;
-        @Nullable private final Bitmap mForegroundTabBitmap;
+        @Nullable
+        private final Drawable mBackgroundTabDrawable;
+        @Nullable
+        private final Bitmap mForegroundTabBitmap;
         private ColorMatrix mColorMatrix;
         private Paint mPaint;
         private ColorFilter mFilter;
@@ -302,14 +321,14 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
                 mBackgroundTabDrawable = null;
                 mForegroundTabBitmap = null;
             } else {
-                int backgroundColor = Utils.mixTwoColors(ThemeUtils.getPrimaryColor(getContext()), Color.BLACK, 0.75f);
+                int backgroundColor = Utils.mixTwoColors(BrowserApp.getThemeManager().getPrimaryColor(theme), Color.BLACK, 0.75f);
                 Bitmap backgroundTabBitmap = Bitmap.createBitmap(Utils.dpToPx(175), Utils.dpToPx(30), Bitmap.Config.ARGB_8888);
-                Utils.drawTrapezoid(new Canvas(backgroundTabBitmap), backgroundColor, true);
-                mBackgroundTabDrawable = new BitmapDrawable(getResources(), backgroundTabBitmap);
+                Utils.drawTrapezoid(new Canvas(backgroundTabBitmap), backgroundColor, getActivity().getResources().getColor(R.color.tabBorder), true);
+                mBackgroundTabDrawable = new ColorDrawable(Utils.mixTwoColors(BrowserApp.getThemeManager().getPrimaryColor(theme), Color.BLACK, 0.75f));
 
-                int foregroundColor = ThemeUtils.getPrimaryColor(getContext());
+                int foregroundColor = BrowserApp.getThemeManager().getPrimaryColor(theme);
                 mForegroundTabBitmap = Bitmap.createBitmap(Utils.dpToPx(175), Utils.dpToPx(30), Bitmap.Config.ARGB_8888);
-                Utils.drawTrapezoid(new Canvas(mForegroundTabBitmap), foregroundColor, false);
+                Utils.drawTrapezoid(new Canvas(mForegroundTabBitmap), foregroundColor, getActivity().getResources().getColor(R.color.tabBorder), false);
             }
         }
 
@@ -335,12 +354,12 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
                 return;
             }
             holder.txtTitle.setText(web.getTitle());
-
+            holder.txtTitle.setTextColor(BrowserApp.getThemeManager().getIconColor(theme));
             final Bitmap favicon = web.getFavicon();
             if (web.isForegroundTab()) {
                 Drawable foregroundDrawable = null;
                 if (!mDrawerTabs) {
-                    foregroundDrawable = new BitmapDrawable(getResources(), mForegroundTabBitmap);
+                    foregroundDrawable = new ColorDrawable(BrowserApp.getThemeManager().getPrimaryColor(theme));
                     if (!mIsIncognito && mColorMode) {
                         foregroundDrawable.setColorFilter(mUiController.getUiColor(), PorterDuff.Mode.SRC_IN);
                     }
@@ -354,12 +373,14 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
                     DrawableUtils.setBackground(holder.layout, foregroundDrawable);
                 }
                 holder.favicon.setImageBitmap(favicon);
+                //holder.layout.setZ(999);
             } else {
                 TextViewCompat.setTextAppearance(holder.txtTitle, R.style.normalText);
                 if (!mDrawerTabs) {
                     DrawableUtils.setBackground(holder.layout, mBackgroundTabDrawable);
                 }
                 holder.favicon.setImageBitmap(getDesaturatedBitmap(favicon));
+                //holder.layout.setZ(position);
             }
 
             if (mDrawerTabs) {
@@ -380,7 +401,7 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
 
         public Bitmap getDesaturatedBitmap(@NonNull Bitmap favicon) {
             Bitmap grayscaleBitmap = Bitmap.createBitmap(favicon.getWidth(),
-                favicon.getHeight(), Bitmap.Config.ARGB_8888);
+                    favicon.getHeight(), Bitmap.Config.ARGB_8888);
 
             Canvas c = new Canvas(grayscaleBitmap);
             if (mColorMatrix == null || mFilter == null || mPaint == null) {
@@ -411,11 +432,16 @@ public class TabsFragment extends Fragment implements View.OnClickListener, View
                 layout.setOnLongClickListener(this);
             }
 
-            @NonNull final TextView txtTitle;
-            @NonNull final ImageView favicon;
-            @NonNull final ImageView exit;
-            @NonNull final FrameLayout exitButton;
-            @NonNull final LinearLayout layout;
+            @NonNull
+            final TextView txtTitle;
+            @NonNull
+            final ImageView favicon;
+            @NonNull
+            final ImageView exit;
+            @NonNull
+            final FrameLayout exitButton;
+            @NonNull
+            final LinearLayout layout;
 
             @Override
             public void onClick(View v) {

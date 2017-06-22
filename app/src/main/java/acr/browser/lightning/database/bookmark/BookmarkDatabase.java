@@ -13,13 +13,17 @@ import android.text.TextUtils;
 
 import com.anthonycr.bonsai.Completable;
 import com.anthonycr.bonsai.CompletableAction;
+import com.anthonycr.bonsai.CompletableOnSubscribe;
 import com.anthonycr.bonsai.CompletableSubscriber;
+import com.anthonycr.bonsai.Scheduler;
+import com.anthonycr.bonsai.Schedulers;
 import com.anthonycr.bonsai.Single;
 import com.anthonycr.bonsai.SingleAction;
 import com.anthonycr.bonsai.SingleSubscriber;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -56,10 +60,15 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
     private static final String KEY_TITLE = "title";
     private static final String KEY_FOLDER = "folder";
     private static final String KEY_POSITION = "position";
+    private static final String KEY_MAIN_SCREEN = "main_screen";
+    private static final String KEY_IMAGE_URL = "image_url";
+    private static final String KEY_DELETED = "deleted";
 
-    @NonNull private final String DEFAULT_BOOKMARK_TITLE;
+    @NonNull
+    private final String DEFAULT_BOOKMARK_TITLE;
 
-    @Nullable private SQLiteDatabase mDatabase;
+    @Nullable
+    private SQLiteDatabase mDatabase;
 
     @Inject
     public BookmarkDatabase(@NonNull Application application) {
@@ -75,7 +84,7 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
      */
     @WorkerThread
     @NonNull
-    private synchronized SQLiteDatabase lazyDatabase() {
+    private SQLiteDatabase lazyDatabase() {
         if (mDatabase == null || !mDatabase.isOpen()) {
             mDatabase = getWritableDatabase();
         }
@@ -87,12 +96,15 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
     @Override
     public void onCreate(@NonNull SQLiteDatabase db) {
         String CREATE_BOOKMARK_TABLE = "CREATE TABLE " +
-            DatabaseUtils.sqlEscapeString(TABLE_BOOKMARK) + '(' +
-            DatabaseUtils.sqlEscapeString(KEY_ID) + " INTEGER PRIMARY KEY," +
-            DatabaseUtils.sqlEscapeString(KEY_URL) + " TEXT," +
-            DatabaseUtils.sqlEscapeString(KEY_TITLE) + " TEXT," +
-            DatabaseUtils.sqlEscapeString(KEY_FOLDER) + " TEXT," +
-            DatabaseUtils.sqlEscapeString(KEY_POSITION) + " INTEGER" + ')';
+                DatabaseUtils.sqlEscapeString(TABLE_BOOKMARK) + '(' +
+                DatabaseUtils.sqlEscapeString(KEY_ID) + " INTEGER PRIMARY KEY," +
+                DatabaseUtils.sqlEscapeString(KEY_URL) + " TEXT," +
+                DatabaseUtils.sqlEscapeString(KEY_TITLE) + " TEXT," +
+                DatabaseUtils.sqlEscapeString(KEY_FOLDER) + " TEXT," +
+                DatabaseUtils.sqlEscapeString(KEY_MAIN_SCREEN) + " INTEGER," +
+                DatabaseUtils.sqlEscapeString(KEY_DELETED) + " INTEGER," +
+                DatabaseUtils.sqlEscapeString(KEY_IMAGE_URL) + " TEXT," +
+                DatabaseUtils.sqlEscapeString(KEY_POSITION) + " INTEGER" + ')';
         db.execSQL(CREATE_BOOKMARK_TABLE);
     }
 
@@ -105,33 +117,20 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
         onCreate(db);
     }
 
-    /**
-     * Binds a {@link HistoryItem} to {@link ContentValues}.
-     *
-     * @param bookmarkItem the bookmark to bind.
-     * @return a valid values object that can be inserted
-     * into the database.
-     */
     @NonNull
     private static ContentValues bindBookmarkToContentValues(@NonNull HistoryItem bookmarkItem) {
-        ContentValues contentValues = new ContentValues(4);
+        ContentValues contentValues = new ContentValues(5);
         contentValues.put(KEY_TITLE, bookmarkItem.getTitle());
         contentValues.put(KEY_URL, bookmarkItem.getUrl());
         contentValues.put(KEY_FOLDER, bookmarkItem.getFolder());
         contentValues.put(KEY_POSITION, bookmarkItem.getPosition());
+        contentValues.put(KEY_MAIN_SCREEN, bookmarkItem.isShowOnMainScreen() ? 1 : 0);
+        contentValues.put(KEY_DELETED, bookmarkItem.isDeleted() ? 1 : 0);
+        contentValues.put(KEY_IMAGE_URL, bookmarkItem.getImageUrl());
 
         return contentValues;
     }
 
-    /**
-     * Binds a cursor to a {@link HistoryItem}. This is
-     * a non consuming operation on the cursor. Note that
-     * this operation is not safe to perform on a cursor
-     * unless you know that the cursor is of history items.
-     *
-     * @param cursor the cursor to read from.
-     * @return a valid item containing all the pertinent information.
-     */
     @NonNull
     private static HistoryItem bindCursorToHistoryItem(@NonNull Cursor cursor) {
         HistoryItem bookmark = new HistoryItem();
@@ -141,17 +140,13 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
         bookmark.setTitle(cursor.getString(cursor.getColumnIndex(KEY_TITLE)));
         bookmark.setFolder(cursor.getString(cursor.getColumnIndex(KEY_FOLDER)));
         bookmark.setPosition(cursor.getInt(cursor.getColumnIndex(KEY_POSITION)));
+        bookmark.setShowOnMainScreen(cursor.getInt(cursor.getColumnIndex(KEY_MAIN_SCREEN)) == 1);
+        bookmark.setDeleted(cursor.getInt(cursor.getColumnIndex(KEY_DELETED)) == 1);
+        bookmark.setImageUrl(cursor.getString(cursor.getColumnIndex(KEY_IMAGE_URL)));
 
         return bookmark;
     }
 
-    /**
-     * Binds a cursor to a list of {@link HistoryItem}.
-     * This operation consumes the cursor.
-     *
-     * @param cursor the cursor to bind.
-     * @return a valid list of history items, may be empty.
-     */
     @NonNull
     private static List<HistoryItem> bindCursorToHistoryItemList(@NonNull Cursor cursor) {
         List<HistoryItem> bookmarks = new ArrayList<>();
@@ -165,91 +160,13 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
         return bookmarks;
     }
 
-    /**
-     * URLs can represent the same thing with or without a trailing slash,
-     * for instance, google.com/ is the same page as google.com. Since these
-     * can be represented as different bookmarks within the bookmark database,
-     * it is important to be able to get the alternate version of a URL.
-     *
-     * @param url the string that might have a trailing slash.
-     * @return a string without a trailing slash if the original had one,
-     * or a string with a trailing slash if the original did not.
-     */
-    @NonNull
-    private static String alternateSlashUrl(@NonNull String url) {
-        if (url.endsWith("/")) {
-            return url.substring(0, url.length() - 1);
-        } else {
-            return url + '/';
-        }
-    }
-
-    /**
-     * Queries the database for bookmarks with the provided URL. If it
-     * cannot find any bookmarks with the given URL, it will try to query
-     * for bookmarks with the {@link #alternateSlashUrl(String)} as its URL.
-     *
-     * @param url the URL to query for.
-     * @return a cursor with bookmarks matching the URL.
-     */
-    @NonNull
-    private Cursor queryWithOptionalEndSlash(@NonNull String url) {
-        Cursor cursor = lazyDatabase().query(TABLE_BOOKMARK, null, KEY_URL + "=?", new String[]{url}, null, null, null, "1");
-
-        if (cursor.getCount() == 0) {
-            String alternateUrl = alternateSlashUrl(url);
-            cursor = lazyDatabase().query(TABLE_BOOKMARK, null, KEY_URL + "=?", new String[]{alternateUrl}, null, null, null, "1");
-        }
-
-        return cursor;
-    }
-
-    /**
-     * Deletes a bookmark from the database with the provided URL. If it
-     * cannot find any bookmark with the given URL, it will try to delete
-     * a bookmark with the {@link #alternateSlashUrl(String)} as its URL.
-     *
-     * @param url the URL to delete.
-     * @return the number of deleted rows.
-     */
-    private int deleteWithOptionalEndSlash(@NonNull String url) {
-        int deletedRows = lazyDatabase().delete(TABLE_BOOKMARK, KEY_URL + "=?", new String[]{url});
-
-        if (deletedRows == 0) {
-            String alternateUrl = alternateSlashUrl(url);
-            deletedRows = lazyDatabase().delete(TABLE_BOOKMARK, KEY_URL + "=?", new String[]{alternateUrl});
-        }
-
-        return deletedRows;
-    }
-
-    /**
-     * Updates a bookmark in the database with the provided URL. If it
-     * cannot find any bookmark with the given URL, it will try to update
-     * a bookmark with the {@link #alternateSlashUrl(String)} as its URL.
-     *
-     * @param url           the URL to update.
-     * @param contentValues the new values to update to.
-     * @return the numebr of rows updated.
-     */
-    private int updateWithOptionalEndSlash(@NonNull String url, @NonNull ContentValues contentValues) {
-        int updatedRows = lazyDatabase().update(TABLE_BOOKMARK, contentValues, KEY_URL + "=?", new String[]{url});
-
-        if (updatedRows == 0) {
-            String alternateUrl = alternateSlashUrl(url);
-            updatedRows = lazyDatabase().update(TABLE_BOOKMARK, contentValues, KEY_URL + "=?", new String[]{alternateUrl});
-        }
-
-        return updatedRows;
-    }
-
     @NonNull
     @Override
     public Single<HistoryItem> findBookmarkForUrl(@NonNull final String url) {
         return Single.create(new SingleAction<HistoryItem>() {
             @Override
             public void onSubscribe(@NonNull SingleSubscriber<HistoryItem> subscriber) {
-                Cursor cursor = queryWithOptionalEndSlash(url);
+                Cursor cursor = lazyDatabase().query(TABLE_BOOKMARK, null, KEY_URL + "=?", new String[]{url}, null, null, null, "1");
 
                 if (cursor.moveToFirst()) {
                     subscriber.onItem(bindCursorToHistoryItem(cursor));
@@ -269,7 +186,7 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
         return Single.create(new SingleAction<Boolean>() {
             @Override
             public void onSubscribe(@NonNull SingleSubscriber<Boolean> subscriber) {
-                Cursor cursor = queryWithOptionalEndSlash(url);
+                Cursor cursor = lazyDatabase().query(TABLE_BOOKMARK, null, KEY_URL + "=? and " + KEY_DELETED+"=?", new String[]{url, "0"}, null, null, null, "1");
 
                 subscriber.onItem(cursor.moveToFirst());
 
@@ -281,16 +198,30 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
 
     @NonNull
     @Override
-    public Single<Boolean> addBookmarkIfNotExists(@NonNull final HistoryItem item) {
+    public Single<Boolean> addBookmarkIfNotExists(@NonNull final HistoryItem item, final boolean force) {
         return Single.create(new SingleAction<Boolean>() {
             @Override
-            public void onSubscribe(@NonNull SingleSubscriber<Boolean> subscriber) {
-                Cursor cursor = queryWithOptionalEndSlash(item.getUrl());
+            public void onSubscribe(@NonNull final SingleSubscriber<Boolean> subscriber) {
+                Cursor cursor = lazyDatabase().query(TABLE_BOOKMARK, null, KEY_URL + "=?", new String[]{item.getUrl()}, null, null, null, "1");
 
                 if (cursor.moveToFirst()) {
+
+                    if(force){
+                        HistoryItem historyItem = bindCursorToHistoryItem(cursor);
+                        historyItem.setDeleted(false);
+                        editBookmark(historyItem, historyItem).observeOn(Schedulers.io()).subscribe(new CompletableOnSubscribe() {
+                            @Override
+                            public void onComplete() {
+                                subscriber.onItem(true);
+                                subscriber.onComplete();
+                            }
+                        });
+                    }else {
+
+                        subscriber.onItem(false);
+                        subscriber.onComplete();
+                    }
                     cursor.close();
-                    subscriber.onItem(false);
-                    subscriber.onComplete();
                     return;
                 }
 
@@ -313,7 +244,7 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
                 lazyDatabase().beginTransaction();
 
                 for (HistoryItem item : bookmarkItems) {
-                    addBookmarkIfNotExists(item).subscribe();
+                    addBookmarkIfNotExists(item, true).subscribe();
                 }
 
                 lazyDatabase().setTransactionSuccessful();
@@ -329,11 +260,15 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
     public Single<Boolean> deleteBookmark(@NonNull final HistoryItem bookmark) {
         return Single.create(new SingleAction<Boolean>() {
             @Override
-            public void onSubscribe(@NonNull SingleSubscriber<Boolean> subscriber) {
-                int rows = deleteWithOptionalEndSlash(bookmark.getUrl());
-
-                subscriber.onItem(rows > 0);
-                subscriber.onComplete();
+            public void onSubscribe(@NonNull final SingleSubscriber<Boolean> subscriber) {
+                bookmark.setDeleted(true);
+                editBookmark(bookmark, bookmark).observeOn(Schedulers.io()).subscribe(new CompletableOnSubscribe() {
+                    @Override
+                    public void onComplete() {
+                        subscriber.onItem(true);
+                        subscriber.onComplete();
+                    }
+                });
             }
         });
     }
@@ -391,7 +326,7 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
                 }
                 ContentValues contentValues = bindBookmarkToContentValues(newBookmark);
 
-                updateWithOptionalEndSlash(oldBookmark.getUrl(), contentValues);
+                lazyDatabase().update(TABLE_BOOKMARK, contentValues, KEY_URL + "=?", new String[]{oldBookmark.getUrl()});
 
                 subscriber.onComplete();
             }
@@ -404,7 +339,7 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
         return Single.create(new SingleAction<List<HistoryItem>>() {
             @Override
             public void onSubscribe(@NonNull SingleSubscriber<List<HistoryItem>> subscriber) {
-                Cursor cursor = lazyDatabase().query(TABLE_BOOKMARK, null, null, null, null, null, null);
+                Cursor cursor = lazyDatabase().query(TABLE_BOOKMARK, null, KEY_DELETED+"=?", new String[]{"0"}, null, null, null);
 
                 subscriber.onItem(bindCursorToHistoryItemList(cursor));
                 subscriber.onComplete();
@@ -419,7 +354,7 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
             @Override
             public void onSubscribe(@NonNull SingleSubscriber<List<HistoryItem>> subscriber) {
                 String finalFolder = folder != null ? folder : "";
-                Cursor cursor = lazyDatabase().query(TABLE_BOOKMARK, null, KEY_FOLDER + "=?", new String[]{finalFolder}, null, null, null);
+                Cursor cursor = lazyDatabase().query(TABLE_BOOKMARK, null, KEY_FOLDER + "=? and " + KEY_DELETED+"=?", new String[]{finalFolder, "0"}, null, null, null);
 
                 List<HistoryItem> list = bindCursorToHistoryItemList(cursor);
                 Collections.sort(list);
@@ -428,6 +363,28 @@ public class BookmarkDatabase extends SQLiteOpenHelper implements BookmarkModel 
             }
         });
     }
+
+    @NonNull
+    @Override
+    public Single<List<HistoryItem>> getBookmarksForMainScreen() {
+        return Single.create(new SingleAction<List<HistoryItem>>() {
+            @Override
+            public void onSubscribe(@NonNull SingleSubscriber<List<HistoryItem>> subscriber) {
+                Cursor cursor = lazyDatabase().query(TABLE_BOOKMARK, null, KEY_MAIN_SCREEN + "=? and " + KEY_DELETED+"=?", new String[]{"1", "0"}, null, null, null);
+
+                List<HistoryItem> list = bindCursorToHistoryItemList(cursor);
+                Collections.sort(list, new Comparator<HistoryItem>() {
+                    @Override
+                    public int compare(HistoryItem historyItem, HistoryItem t1) {
+                        return Integer.valueOf(historyItem.getPosition()).compareTo(t1.getPosition());
+                    }
+                });
+                subscriber.onItem(list);
+                subscriber.onComplete();
+            }
+        });
+    }
+
 
     @NonNull
     @Override

@@ -11,19 +11,27 @@ import acr.browser.lightning.utils.Preconditions;
 
 public class HistoryItem implements Comparable<HistoryItem> {
 
-    @NonNull private String mUrl = "";
+    // private variables
+    @NonNull
+    private String mUrl = "";
 
-    @NonNull private String mTitle = "";
+    @NonNull
+    private String mTitle = "";
 
-    @NonNull private String mFolder = "";
+    @NonNull
+    private String mFolder = "";
 
-    @Nullable private Bitmap mBitmap = null;
+    @Nullable
+    private Bitmap mBitmap = null;
+
+    private String imageUrl = "";
 
     private int mImageId = 0;
-
     private int mPosition = 0;
-
+    private int id;
     private boolean mIsFolder = false;
+    private boolean showOnMainScreen;
+    private boolean isDeleted;
 
     public HistoryItem() {}
 
@@ -42,6 +50,38 @@ public class HistoryItem implements Comparable<HistoryItem> {
         this.mTitle = title;
         this.mBitmap = null;
         this.mImageId = imageId;
+    }
+
+    public boolean isShowOnMainScreen() {
+        return showOnMainScreen;
+    }
+
+    public void setShowOnMainScreen(boolean showOnMainScreen) {
+        this.showOnMainScreen = showOnMainScreen;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public int getImageId() {
@@ -112,7 +152,7 @@ public class HistoryItem implements Comparable<HistoryItem> {
 
     @Override
     public int compareTo(@NonNull HistoryItem another) {
-        int compare = this.mTitle.compareToIgnoreCase(another.mTitle);
+        int compare = this.mTitle.compareTo(another.mTitle);
         if (compare == 0) {
             return this.mUrl.compareTo(another.mUrl);
         }
@@ -120,30 +160,27 @@ public class HistoryItem implements Comparable<HistoryItem> {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(@Nullable Object object) {
 
-        HistoryItem that = (HistoryItem) o;
+        if (this == object) return true;
+        if (object == null) return false;
+        if (!(object instanceof HistoryItem)) return false;
 
-        if (mImageId != that.mImageId) return false;
-        if (mPosition != that.mPosition) return false;
-        if (mIsFolder != that.mIsFolder) return false;
-        if (!mUrl.equals(that.mUrl)) return false;
-        if (!mTitle.equals(that.mTitle)) return false;
+        HistoryItem that = (HistoryItem) object;
 
-        return mFolder.equals(that.mFolder);
-
+        return mImageId == that.mImageId &&
+            this.mTitle.equals(that.mTitle) && this.mUrl.equals(that.mUrl) &&
+            this.mFolder.equals(that.mFolder);
     }
 
     @Override
     public int hashCode() {
+
         int result = mUrl.hashCode();
-        result = 31 * result + mTitle.hashCode();
-        result = 31 * result + mFolder.hashCode();
         result = 31 * result + mImageId;
-        result = 31 * result + mPosition;
-        result = 31 * result + (mIsFolder ? 1 : 0);
+        result = 31 * result + mTitle.hashCode();
+        result = 32 * result + mFolder.hashCode();
+        result = 31 * result + mImageId;
 
         return result;
     }

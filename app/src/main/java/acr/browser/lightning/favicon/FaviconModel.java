@@ -2,13 +2,9 @@ package acr.browser.lightning.favicon;
 
 import android.app.Application;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.WorkerThread;
-import android.text.TextUtils;
 import android.util.Log;
 import android.util.LruCache;
 
@@ -26,8 +22,6 @@ import java.io.IOException;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import acr.browser.lightning.R;
-import acr.browser.lightning.utils.DrawableUtils;
 import acr.browser.lightning.utils.FileUtils;
 import acr.browser.lightning.utils.Preconditions;
 import acr.browser.lightning.utils.Utils;
@@ -41,7 +35,7 @@ public class FaviconModel {
 
     private static final String TAG = "FaviconModel";
 
-    @NonNull private final BitmapFactory.Options mLoaderOptions = new BitmapFactory.Options();
+    @NonNull private final ImageFetcher mImageFetcher;
     @NonNull private final Application mApplication;
     @NonNull private final LruCache<String, Bitmap> mFaviconCache = new LruCache<String, Bitmap>((int) FileUtils.megabytesToBytes(1)) {
         @Override
@@ -50,12 +44,10 @@ public class FaviconModel {
         }
     };
 
-    private final int mBookmarkIconSize;
-
     @Inject
     FaviconModel(@NonNull Application application) {
+        mImageFetcher = new ImageFetcher();
         mApplication = application;
-        mBookmarkIconSize = mApplication.getResources().getDimensionPixelSize(R.dimen.bookmark_item_icon_size);
     }
 
     /**
@@ -74,18 +66,6 @@ public class FaviconModel {
         synchronized (mFaviconCache) {
             return mFaviconCache.get(url);
         }
-    }
-
-    @NonNull
-    public Bitmap getDefaultBitmapForString(@Nullable String title) {
-        Character firstTitleCharacter = !TextUtils.isEmpty(title) ? title.charAt(0) : '?';
-
-        @ColorInt int defaultFaviconColor = DrawableUtils.characterToColorHash(firstTitleCharacter, mApplication);
-
-        return DrawableUtils.getRoundedLetterImage(firstTitleCharacter,
-            mBookmarkIconSize,
-            mBookmarkIconSize,
-            defaultFaviconColor);
     }
 
     /**
@@ -113,9 +93,8 @@ public class FaviconModel {
      * @param uri the URI to use as a unique identifier.
      * @return a valid cache file.
      */
-    @WorkerThread
     @NonNull
-    public static File getFaviconCacheFile(@NonNull Application app, @NonNull Uri uri) {
+    private static File createFaviconCacheFile(@NonNull Application app, @NonNull Uri uri) {
         FaviconUtils.assertUriSafe(uri);
 
         String hash = String.valueOf(uri.getHost().hashCode());
@@ -127,13 +106,19 @@ public class FaviconModel {
      * Retrieves the favicon for a URL,
      * may be from network or cache.
      *
-     * @param url   The URL that we should retrieve the
-     *              favicon for.
-     * @param title The title for the web page.
+     * @param url                the URL that we should retrieve the
+     *                           favicon for.
+     * @param defaultFavicon     the default favicon if no
+     *                           favicon is found.
+     * @param allowGoogleService true to allow grabbing favicons
+     *                           from Google, false otherwise.
+     * @return an observable that emits a bitmap if one is found,
+     * or the default if none was found.
      */
     @NonNull
     public Single<Bitmap> faviconForUrl(@NonNull final String url,
-                                        @NonNull final String title) {
+                                        @NonNull final Bitmap defaultFavicon,
+                                        final boolean allowGoogleService) {
         return Single.create(new SingleAction<Bitmap>() {
             @Override
             public void onSubscribe(@NonNull SingleSubscriber<Bitmap> subscriber) {
@@ -141,7 +126,7 @@ public class FaviconModel {
 
                 if (uri == null) {
 
-                    Bitmap newFavicon = Utils.padFavicon(getDefaultBitmapForString(title));
+                    Bitmap newFavicon = Utils.padFavicon(defaultFavicon);
 
                     subscriber.onItem(newFavicon);
                     subscriber.onComplete();
@@ -149,19 +134,19 @@ public class FaviconModel {
                     return;
                 }
 
-                File faviconCacheFile = getFaviconCacheFile(mApplication, uri);
+                File faviconCacheFile = createFaviconCacheFile(mApplication, uri);
+
 
                 Bitmap favicon = getFaviconFromMemCache(url);
 
                 if (faviconCacheFile.exists() && favicon == null) {
-                    favicon = BitmapFactory.decodeFile(faviconCacheFile.getPath(), mLoaderOptions);
-
-                    if (favicon != null) {
-                        addFaviconToMemCache(url, favicon);
-                    }
+                    favicon = mImageFetcher.retrieveFaviconFromCache(faviconCacheFile);
                 }
 
-                if (favicon != null) {
+                if (favicon == null) {
+                    // TODO: 6/5/17 figure out if optimistic favicon retrieval should be added back or dropped
+                    // favicon = mImageFetcher.retrieveBitmapFromDomain(uri);
+                } else {
                     Bitmap newFavicon = Utils.padFavicon(favicon);
 
                     subscriber.onItem(newFavicon);
@@ -170,7 +155,18 @@ public class FaviconModel {
                     return;
                 }
 
-                favicon = getDefaultBitmapForString(title);
+                // if (favicon == null && allowGoogleService) {
+                //     favicon = mImageFetcher.retrieveBitmapFromGoogle(uri);
+                // }
+
+                // if (favicon != null) {
+                //     addFaviconToMemCache(url, favicon);
+                //     cacheFaviconForUrl(favicon, url).subscribe();
+                // }
+
+                // if (favicon == null) {
+                favicon = defaultFavicon;
+                // }
 
                 Bitmap newFavicon = Utils.padFavicon(favicon);
 
@@ -205,7 +201,7 @@ public class FaviconModel {
                 FileOutputStream fos = null;
 
                 try {
-                    File image = getFaviconCacheFile(mApplication, uri);
+                    File image = createFaviconCacheFile(mApplication, uri);
                     fos = new FileOutputStream(image);
                     favicon.compress(Bitmap.CompressFormat.PNG, 100, fos);
                     fos.flush();

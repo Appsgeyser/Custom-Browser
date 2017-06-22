@@ -61,22 +61,9 @@ public class HistoryPage {
 
     private static final String END = "</div></body></html>";
 
-    /**
-     * Get the file that the history page is stored in
-     * or should be stored in.
-     *
-     * @param application the application used to access the file.
-     * @return a valid file object, note that the file might not exist.
-     */
-    @NonNull
-    private static File getHistoryPageFile(@NonNull Application application) {
-        return new File(application.getFilesDir(), FILENAME);
-    }
-
     @NonNull private final String mTitle;
 
     @Inject Application mApp;
-    @Inject HistoryModel mHistoryModel;
 
     public HistoryPage() {
         BrowserApp.getAppComponent().inject(this);
@@ -90,7 +77,7 @@ public class HistoryPage {
             public void onSubscribe(@NonNull final SingleSubscriber<String> subscriber) {
                 final StringBuilder historyBuilder = new StringBuilder(HEADING_1 + mTitle + HEADING_2);
 
-                mHistoryModel.lastHundredVisitedHistoryItems()
+                HistoryModel.lastHundredVisitedHistoryItems()
                     .subscribe(new SingleOnSubscribe<List<HistoryItem>>() {
                         @Override
                         public void onItem(@Nullable List<HistoryItem> item) {
@@ -110,7 +97,7 @@ public class HistoryPage {
                             }
 
                             historyBuilder.append(END);
-                            File historyWebPage = getHistoryPageFile(mApp);
+                            File historyWebPage = new File(mApp.getFilesDir(), FILENAME);
                             FileWriter historyWriter = null;
                             try {
                                 //noinspection IOResourceOpenedButNotSafelyClosed
@@ -143,7 +130,7 @@ public class HistoryPage {
         return Completable.create(new CompletableAction() {
             @Override
             public void onSubscribe(@NonNull CompletableSubscriber subscriber) {
-                File historyWebPage = getHistoryPageFile(application);
+                File historyWebPage = new File(application.getFilesDir(), FILENAME);
                 if (historyWebPage.exists()) {
                     historyWebPage.delete();
                 }

@@ -1,0 +1,64 @@
+{
+  "browserLinks": [
+    {
+      "title": "Google",
+      "url": "https:\/\/www.google.ru\/",
+      "icon": ""
+    },
+    {
+      "title": "Amazon",
+      "url": "https:\/\/www.amazon.com\/",
+      "icon": ""
+    },
+    {
+      "title": "Reddit",
+      "url": "https:\/\/www.reddit.com\/",
+      "icon": ""
+    },
+    {
+      "title": "Vimeo",
+      "url": "https:\/\/vimeo.com\/",
+      "icon": ""
+    },
+    {
+      "title": "Coub",
+      "url": "http:\/\/coub.com\/",
+      "icon": ""
+    },
+    {
+      "title": "Facebook",
+      "url": "https:\/\/www.facebook.com\/",
+      "icon": ""
+    },
+    {
+      "title": "Twitter",
+      "url": "https:\/\/twitter.com\/",
+      "icon": ""
+    },
+    {
+      "title": "Pinterest",
+      "url": "https:\/\/pinterest.com\/",
+      "icon": ""
+    },
+    {
+      "title": "Tumblr",
+      "url": "http:\/\/www.tumblr.com\/",
+      "icon": ""
+    },
+    {
+      "title": "Linkedin",
+      "url": "https:\/\/www.linkedin.com\/",
+      "icon": ""
+    }
+  ],
+  "name": "browser",
+  "template": "browserV3",
+  "icon": "uploaded_data\/icon.png",
+  "backgroundImage": "uploaded_data\/background.jpg",
+
+  "themeColors": {
+    "colorPrimary": "#009688",
+    "colorPrimaryDark": "#004d40",
+    "colorAccent": "#00bfa5"
+  }
+}

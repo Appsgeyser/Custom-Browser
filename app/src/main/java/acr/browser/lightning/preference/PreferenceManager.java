@@ -9,7 +9,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import acr.browser.lightning.constant.Constants;
-import acr.browser.lightning.utils.FileUtils;
+import acr.browser.lightning.domain.GeoData;
+import acr.browser.lightning.domain.WeatherData;
+import acr.browser.lightning.download.DownloadHandler;
 
 @Singleton
 public class PreferenceManager {
@@ -56,6 +58,7 @@ public class PreferenceManager {
         static final String SWAP_BOOKMARKS_AND_TABS = "swapBookmarksAndTabs";
         static final String SEARCH_SUGGESTIONS = "searchSuggestions";
         static final String BLACK_STATUS_BAR = "blackStatusBar";
+        static final String LAST_BANNER_SHOWN_TIME = "lastBannerShownTime";
 
         static final String USE_PROXY = "useProxy";
         static final String PROXY_CHOICE = "proxyChoice";
@@ -64,7 +67,23 @@ public class PreferenceManager {
         static final String INITIAL_CHECK_FOR_TOR = "checkForTor";
         static final String INITIAL_CHECK_FOR_I2P = "checkForI2P";
 
+        static final String GEO_DATA_CITY_NAME = "geoDataCityName";
+        static final String GEO_DATA_COUNTRY_CODE = "geoDataCountryCode";
+        static final String GEO_DATA_LAST_UPDATE_TIME = "geoDataUpdateTime";
+        static final String CITY_NAME = "cityName";
+
+        static final String WEATHER_TEMP = "weatherTemp";
+        static final String WEATHER_LOCATION = "weatherLocation";
+        static final String WEATHER_CODE = "weatherCode";
+        static final String WEATHER_TEXT = "weatherText";
+        static final String WEATHER_UPDATE_TIME = "weatherUpdateTime";
+
+
+        static final String BOOKMARKS_APPLIED = "bookmarksApplies";
+        static final String SEARCH_APPLIED = "searchApplies";
+
         static final String LEAK_CANARY = "leakCanary";
+        static final String ADV_ID = "advertisingId";
     }
 
     public enum Suggestion {
@@ -92,12 +111,76 @@ public class PreferenceManager {
         }
     }
 
+    public String getCity() {
+        return mPrefs.getString(Name.CITY_NAME, "New-York");
+    }
+
+    public void setCity(String city) {
+        putString(Name.CITY_NAME, city);
+    }
+
+    public boolean hasCity() {
+        return mPrefs.contains(Name.CITY_NAME);
+    }
+
+    public boolean removeCity() {
+        return mPrefs.edit().remove(Name.CITY_NAME).commit();
+    }
+
+    public void setWeatherDataData(WeatherData weatherData) {
+        if(weatherData == null) {
+            mPrefs.edit().remove(Name.WEATHER_TEMP)
+           .remove(Name.WEATHER_CODE)
+           .remove(Name.WEATHER_TEXT)
+           .remove(Name.WEATHER_LOCATION)
+           .remove(Name.WEATHER_UPDATE_TIME).apply();
+        }else {
+            putInt(Name.WEATHER_TEMP, weatherData.getTemp());
+            putInt(Name.WEATHER_CODE, weatherData.getCode());
+            putString(Name.WEATHER_TEXT, weatherData.getText());
+            putString(Name.WEATHER_LOCATION, weatherData.getLocation());
+            putInt(Name.WEATHER_UPDATE_TIME, (int) (weatherData.getLastUpdateTime() / 1000));
+        }
+    }
+
+    public WeatherData getWeatherData() {
+        WeatherData weatherData = new WeatherData();
+        weatherData.setCode(mPrefs.getInt(Name.WEATHER_CODE, 0));
+        weatherData.setTemp(mPrefs.getInt(Name.WEATHER_TEMP, 0));
+        weatherData.setText(mPrefs.getString(Name.WEATHER_TEXT, ""));
+        weatherData.setLocation(mPrefs.getString(Name.WEATHER_LOCATION, ""));
+        weatherData.setLastUpdateTime(mPrefs.getInt(Name.WEATHER_UPDATE_TIME, 0) * 1000L);
+        return weatherData;
+    }
+
+    public void setGeoData(GeoData geoData) {
+        putString(Name.GEO_DATA_CITY_NAME, geoData.getCityName());
+        putString(Name.GEO_DATA_COUNTRY_CODE, geoData.getCountryCode());
+        putInt(Name.GEO_DATA_LAST_UPDATE_TIME, (int)(geoData.getLastUpdateTime() / 1000));
+    }
+
+    public GeoData getGeoData() {
+        GeoData geoData = new GeoData();
+        geoData.setCityName(mPrefs.getString(Name.GEO_DATA_CITY_NAME, "New-York"));
+        geoData.setCountryCode(mPrefs.getString(Name.GEO_DATA_COUNTRY_CODE, "en"));
+        geoData.setLastUpdateTime(mPrefs.getInt(Name.GEO_DATA_LAST_UPDATE_TIME, 0) * 1000L);
+        return geoData;
+    }
+
     public void setSearchSuggestionChoice(@NonNull Suggestion suggestion) {
         putString(Name.SEARCH_SUGGESTIONS, suggestion.name());
     }
 
     public boolean getBookmarksAndTabsSwapped() {
         return mPrefs.getBoolean(Name.SWAP_BOOKMARKS_AND_TABS, false);
+    }
+
+    public String getAdvertisingId() {
+        return mPrefs.getString(Name.ADV_ID, "");
+    }
+
+    public void setAdvertisingId(String advid) {
+        mPrefs.edit().putString(Name.ADV_ID, advid);
     }
 
     public void setBookmarkAndTabsSwapped(boolean swap) {
@@ -141,16 +224,24 @@ public class PreferenceManager {
     }
 
     public boolean getColorModeEnabled() {
-        return mPrefs.getBoolean(Name.ENABLE_COLOR_MODE, true);
+        return false;
     }
 
     public boolean getCookiesEnabled() {
         return mPrefs.getBoolean(Name.COOKIES, true);
     }
 
+    public boolean getBookmarksApplies() {
+        return mPrefs.getBoolean(Name.BOOKMARKS_APPLIED, false);
+    }
+
+    public boolean getSearchEngineApplies() {
+        return mPrefs.getBoolean(Name.SEARCH_APPLIED, false);
+    }
+
     @NonNull
     public String getDownloadDirectory() {
-        return mPrefs.getString(Name.DOWNLOAD_DIRECTORY, FileUtils.DEFAULT_DOWNLOAD_PATH);
+        return mPrefs.getString(Name.DOWNLOAD_DIRECTORY, DownloadHandler.DEFAULT_DOWNLOAD_PATH);
     }
 
     public int getFlashSupport() {
@@ -171,7 +262,7 @@ public class PreferenceManager {
     }
 
     public boolean getIncognitoCookiesEnabled() {
-        return mPrefs.getBoolean(Name.INCOGNITO_COOKIES, false);
+        return mPrefs.getBoolean(Name.INCOGNITO_COOKIES, true);
     }
 
     public boolean getInvertColors() {
@@ -301,6 +392,15 @@ public class PreferenceManager {
         return mPrefs.getBoolean(Name.BLACK_STATUS_BAR, false);
     }
 
+    public long getLastBannerShownTime() {
+        return mPrefs.getLong(Name.LAST_BANNER_SHOWN_TIME, 0);
+    }
+
+    public void setLastBannerShownTime(long time) {
+        mPrefs.edit().putLong(Name.LAST_BANNER_SHOWN_TIME, time).apply();
+    }
+
+
     private void putBoolean(@NonNull String name, boolean value) {
         mPrefs.edit().putBoolean(name, value).apply();
     }
@@ -347,6 +447,14 @@ public class PreferenceManager {
 
     public void setCheckedForTor(boolean check) {
         putBoolean(Name.INITIAL_CHECK_FOR_TOR, check);
+    }
+
+    public void setBookmarksApplied(boolean applied) {
+        putBoolean(Name.BOOKMARKS_APPLIED, applied);
+    }
+
+    public void setSearchEngineApplied(boolean applied) {
+        putBoolean(Name.SEARCH_APPLIED, applied);
     }
 
     public void setCheckedForI2P(boolean check) {
@@ -472,6 +580,8 @@ public class PreferenceManager {
     public boolean getUseLeakCanary() {
         return mPrefs.getBoolean(Name.LEAK_CANARY, false);
     }
+
+
 
     /**
      * Valid choices:

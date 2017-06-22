@@ -4,27 +4,30 @@
 
     <PreferenceCategory android:title="@string/settings_about">
         <Preference
-            android:summary="@string/url_twitter"
-            android:title="@string/action_follow_me">
+            android:key="pref_version"
+            android:title="@string/version" />
+        <Preference
+            android:summary="@string/platformVersion"
+            android:title="@string/platform_version_caption" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/licenses">
+        <Preference
+            android:summary="@string/mpl_license"
+            android:title="@string/custom_browser">
             <intent
                 android:action="android.intent.action.VIEW"
-                android:data="http://twitter.com/RestainoAnthony">
+                android:data="http://www.mozilla.org/MPL/2.0/">
                 <extra
                     android:name="SOURCE"
                     android:value="SELF" />
             </intent>
         </Preference>
         <Preference
-            android:key="pref_version"
-            android:title="@string/version" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="@string/licenses">
-        <Preference
             android:summary="@string/mpl_license"
-            android:title="@string/app_name">
+            android:title="@string/lightning">
             <intent
                 android:action="android.intent.action.VIEW"
-                android:data="http://www.mozilla.org/MPL/2.0/">
+                android:data="https://github.com/anthonycr/Lightning-Browser/blob/dev/LICENSE">
                 <extra
                     android:name="SOURCE"
                     android:value="SELF" />

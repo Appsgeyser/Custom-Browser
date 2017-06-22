@@ -33,7 +33,6 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
     private static final String SETTINGS_TEXTSIZE = "text_size";
     private static final String SETTINGS_DRAWERTABS = "cb_drawertabs";
     private static final String SETTINGS_SWAPTABS = "cb_swapdrawers";
-    private static final String SETTINGS_BLACK_STATUS = "black_status_bar";
 
     private static final float XXLARGE = 30.0f;
     private static final float XLARGE = 26.0f;
@@ -70,7 +69,6 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
         CheckBoxPreference cbViewPort = (CheckBoxPreference) findPreference(SETTINGS_VIEWPORT);
         CheckBoxPreference cbOverview = (CheckBoxPreference) findPreference(SETTINGS_OVERVIEWMODE);
         CheckBoxPreference cbReflow = (CheckBoxPreference) findPreference(SETTINGS_REFLOW);
-        CheckBoxPreference cbBlackStatus = (CheckBoxPreference) findPreference(SETTINGS_BLACK_STATUS);
         CheckBoxPreference cbDrawerTabs = (CheckBoxPreference) findPreference(SETTINGS_DRAWERTABS);
         CheckBoxPreference cbSwapTabs = (CheckBoxPreference) findPreference(SETTINGS_SWAPTABS);
 
@@ -81,7 +79,6 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
         cbViewPort.setOnPreferenceChangeListener(this);
         cbOverview.setOnPreferenceChangeListener(this);
         cbReflow.setOnPreferenceChangeListener(this);
-        cbBlackStatus.setOnPreferenceChangeListener(this);
         cbDrawerTabs.setOnPreferenceChangeListener(this);
         cbSwapTabs.setOnPreferenceChangeListener(this);
 
@@ -90,7 +87,6 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
         cbViewPort.setChecked(mPreferenceManager.getUseWideViewportEnabled());
         cbOverview.setChecked(mPreferenceManager.getOverviewModeEnabled());
         cbReflow.setChecked(mPreferenceManager.getTextReflowEnabled());
-        cbBlackStatus.setChecked(mPreferenceManager.getUseBlackStatusBar());
         cbDrawerTabs.setChecked(mPreferenceManager.getShowTabsInDrawer(true));
         cbSwapTabs.setChecked(mPreferenceManager.getBookmarksAndTabsSwapped());
 
@@ -139,9 +135,6 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
                 return true;
             case SETTINGS_SWAPTABS:
                 mPreferenceManager.setBookmarkAndTabsSwapped(checked);
-                return true;
-            case SETTINGS_BLACK_STATUS:
-                mPreferenceManager.setUseBlackStatusBar(checked);
                 return true;
             default:
                 return false;

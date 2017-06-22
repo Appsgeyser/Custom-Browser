@@ -48,7 +48,7 @@ public interface BookmarkModel {
      * was added, false otherwise.
      */
     @NonNull
-    Single<Boolean> addBookmarkIfNotExists(@NonNull HistoryItem item);
+    Single<Boolean> addBookmarkIfNotExists(@NonNull HistoryItem item, boolean force);
 
     /**
      * Adds a list of bookmarks to the database.
@@ -133,6 +133,8 @@ public interface BookmarkModel {
      */
     @NonNull
     Single<List<HistoryItem>> getBookmarksFromFolderSorted(@Nullable String folder);
+
+    Single<List<HistoryItem>> getBookmarksForMainScreen();
 
     /**
      * Returns all folders as {@link HistoryItem}.
