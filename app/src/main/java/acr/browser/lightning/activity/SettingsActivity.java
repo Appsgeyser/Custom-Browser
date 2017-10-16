@@ -3,6 +3,7 @@
  */
 package acr.browser.lightning.activity;
 
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -23,7 +24,8 @@ import acr.browser.lightning.app.BrowserApp;
 
 public class SettingsActivity extends ThemableSettingsActivity {
 
-    @NonNull private static final List<String> mFragments = new ArrayList<>(7);
+    @NonNull
+    private static final List<String> mFragments = new ArrayList<>(7);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +43,7 @@ public class SettingsActivity extends ThemableSettingsActivity {
         Toolbar toolbar = toolbarContainer.findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
     }
 
     @Override
@@ -65,6 +68,7 @@ public class SettingsActivity extends ThemableSettingsActivity {
                 mFragments.add(header.fragment);
             }
         }
+
     }
 
     @Override

@@ -1,7 +1,6 @@
 package acr.browser.lightning.browser;
 
 import android.content.DialogInterface;
-import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.view.View;
 
@@ -43,4 +42,5 @@ public interface BrowserView {
 
     void showInterstitialAd();
 
+    void closeAllTabs();
 }

@@ -5,7 +5,8 @@
     android:layout_height="56dp"
     android:background="?attr/listBackground"
     android:gravity="center_vertical"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:id="@+id/background">
 
     <ImageView
         android:id="@+id/faviconBookmark"
@@ -30,5 +31,9 @@
         android:minHeight="?android:attr/listPreferredItemHeightSmall"
         android:singleLine="true"
         android:textAppearance="?android:attr/textAppearanceListItemSmall"/>
-
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/letter"
+        android:visibility="gone"/>
 </LinearLayout>

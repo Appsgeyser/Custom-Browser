@@ -41,8 +41,6 @@ public class BookmarkTouchHelper extends ItemTouchHelper.Callback {
         return true;
     }
 
-
-
     @Override
     public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
         mAdapter.onItemDismiss(viewHolder.getAdapterPosition());

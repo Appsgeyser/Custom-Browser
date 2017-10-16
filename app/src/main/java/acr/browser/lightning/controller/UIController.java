@@ -95,4 +95,6 @@ public interface UIController {
     void handleNewTab(@NonNull LightningDialogBuilder.NewTab newTabType, @NonNull String url);
 
     void handleHistoryChange();
+
+    void onPageLoadFinish();
 }

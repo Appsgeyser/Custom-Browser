@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
-    <string name="widgetID">5163066</string>
+    <string name="widgetID">5524379</string>
     <string name="platform_version_caption">Platform Version</string>
-    <string name="platformVersion">1.0</string>
-    <string name="app_name" translatable="false">Lightning</string>
+    <string name="platformVersion">2.0</string>
+    <string name="app_name" translatable="false">4G Fast Speed Browser</string>
     <string name="action_new_tab">New tab</string>
     <string name="action_share">Share</string>
     <string name="action_history">History</string>
@@ -33,7 +33,7 @@
     <string name="size">Text size</string>
     <string name="recommended">Recommended</string>
     <string name="search">Search engine</string>
-    <string name="search_hint">Search</string>
+    <string name="search_hint">Search web…</string>
     <string name="wideViewPort">Use wide viewport</string>
     <string name="overViewMode">Load pages in overview mode</string>
     <string name="restore">Restore lost tabs on start</string>
@@ -263,4 +263,11 @@
     <string name="lightning">Lightning-Browser</string>
     <string name="custom_browser">Custom-Browser</string>
     <string name="api_key">d6cfd9fa-1f11-454e-b757-0c5a0dffffa7</string>
+    <string name="app_metrica_on_start_event">1</string>
+    <string name="template_version">1.2</string>
+    <string name="enable_search_bar_notification">Search Bar Notification</string>
+    <string name="change_home_page_background">Change background</string>
+    <string name="action_market">Market</string>
+    <string name="enable_weather_notification">Weather Notification</string>
+    <string name="appsgeysersdk_about_item">About</string>
 </resources>

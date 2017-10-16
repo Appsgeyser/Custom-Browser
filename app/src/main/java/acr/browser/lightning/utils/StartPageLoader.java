@@ -1,7 +1,6 @@
 package acr.browser.lightning.utils;
 
 import android.app.Activity;
-import android.content.Context;
 import android.location.Location;
 import android.util.Log;
 
@@ -16,13 +15,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.inject.Inject;
-
 import acr.browser.lightning.R;
 import acr.browser.lightning.database.HistoryItem;
 import acr.browser.lightning.domain.GeoData;
 import acr.browser.lightning.domain.WeatherData;
 import acr.browser.lightning.preference.PreferenceManager;
+import acr.browser.lightning.view.WeatherWidget;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;
@@ -39,6 +37,8 @@ public class StartPageLoader {
     private static final long LOCATION_UPDATE_PERIOD = 2 * 60 * 60 * 1000;
     private static final long WEATHER_UPDATE_PERIOD = 20 * 60 * 1000;
     private static Map<Integer, Integer> weatherIconMap = new HashMap<>();
+    private static Map<Integer, Integer> weatherIconMap2 = new HashMap<>();
+    private static Map<Integer, Integer> weatherIconMap3 = new HashMap<>();
 
     static {
         weatherIconMap.put(0, R.drawable.simple_weather_icon_30);
@@ -92,8 +92,123 @@ public class StartPageLoader {
         weatherIconMap.put(3200, R.drawable.simple_weather_icon_04);
     }
 
-    public static int getIconId(int code) {
-        return weatherIconMap.containsKey(code) ? weatherIconMap.get(code) : R.drawable.simple_weather_icon_04;
+    static {
+        weatherIconMap2.put(0, R.drawable.weather_2_wind);
+        weatherIconMap2.put(1, R.drawable.weather_2_big_rain);
+        weatherIconMap2.put(2, R.drawable.weather_2_wind);
+        weatherIconMap2.put(3, R.drawable.weather_2_thunder);
+        weatherIconMap2.put(4, R.drawable.weather_2_thunder);
+        weatherIconMap2.put(5, R.drawable.weather_2_show_rain);
+        weatherIconMap2.put(6, R.drawable.weather_2_show_rain);
+        weatherIconMap2.put(7, R.drawable.weather_2_show_rain);
+        weatherIconMap2.put(8, R.drawable.weather_2_fog);
+        weatherIconMap2.put(9, R.drawable.weather_2_fog);
+        weatherIconMap2.put(10, R.drawable.weather_2_rain);
+        weatherIconMap2.put(11, R.drawable.weather_2_big_rain);
+        weatherIconMap2.put(12, R.drawable.weather_2_big_rain);
+        weatherIconMap2.put(13, R.drawable.weather_2_snow);
+        weatherIconMap2.put(14, R.drawable.weather_2_snow);
+        weatherIconMap2.put(15, R.drawable.weather_2_snow);
+        weatherIconMap2.put(16, R.drawable.weather_2_snow);
+        weatherIconMap2.put(17, R.drawable.weather_2_hail);
+        weatherIconMap2.put(18, R.drawable.weather_2_hail);
+        weatherIconMap2.put(19, R.drawable.weather_2_fog);
+        weatherIconMap2.put(20, R.drawable.weather_2_fog);
+        weatherIconMap2.put(21, R.drawable.weather_2_fog);
+        weatherIconMap2.put(22, R.drawable.weather_2_fog);
+        weatherIconMap2.put(23, R.drawable.weather_2_wind);
+        weatherIconMap2.put(24, R.drawable.weather_2_wind);
+        weatherIconMap2.put(25, R.drawable.weather_2_clouds);
+        weatherIconMap2.put(26, R.drawable.weather_2_clouds);
+        weatherIconMap2.put(27, R.drawable.weather_2_clouds_moon_night);
+        weatherIconMap2.put(28, R.drawable.weather_2_clouds_sun_day);
+        weatherIconMap2.put(29, R.drawable.weather_2_clouds_moon_night);
+        weatherIconMap2.put(30, R.drawable.weather_2_clouds_sun_day);
+        weatherIconMap2.put(31, R.drawable.weather_2_clear_night);
+        weatherIconMap2.put(32, R.drawable.weather_2_sun);
+        weatherIconMap2.put(33, R.drawable.weather_2_clear_night);
+        weatherIconMap2.put(34, R.drawable.weather_2_sun);
+        weatherIconMap2.put(35, R.drawable.weather_2_show_rain);
+        weatherIconMap2.put(36, R.drawable.weather_2_sun);
+        weatherIconMap2.put(37, R.drawable.weather_2_thunder);
+        weatherIconMap2.put(38, R.drawable.weather_2_thunder);
+        weatherIconMap2.put(39, R.drawable.weather_2_thunder);
+        weatherIconMap2.put(40, R.drawable.weather_2_rain);
+        weatherIconMap2.put(41, R.drawable.weather_2_snow);
+        weatherIconMap2.put(42, R.drawable.weather_2_snow);
+        weatherIconMap2.put(43, R.drawable.weather_2_snow);
+        weatherIconMap2.put(44, R.drawable.weather_2_clouds);
+        weatherIconMap2.put(45, R.drawable.weather_2_thunder);
+        weatherIconMap2.put(46, R.drawable.weather_2_snow);
+        weatherIconMap2.put(47, R.drawable.weather_2_thunder);
+        weatherIconMap2.put(3200, R.drawable.weather_2_clouds);
+    }
+
+    static {
+        weatherIconMap3.put(0, R.drawable.wsymbol_0007_fog);
+        weatherIconMap3.put(1, R.drawable.wsymbol_0018_cloudy_with_heavy_rain);
+        weatherIconMap3.put(2, R.drawable.wsymbol_0007_fog);
+        weatherIconMap3.put(3, R.drawable.wsymbol_0024_thunderstorms);
+        weatherIconMap3.put(4, R.drawable.wsymbol_0024_thunderstorms);
+        weatherIconMap3.put(5, R.drawable.wsymbol_0021_cloudy_with_sleet);
+        weatherIconMap3.put(6, R.drawable.wsymbol_0021_cloudy_with_sleet);
+        weatherIconMap3.put(7, R.drawable.wsymbol_0021_cloudy_with_sleet);
+        weatherIconMap3.put(8, R.drawable.wsymbol_0006_mist);
+        weatherIconMap3.put(9, R.drawable.wsymbol_0006_mist);
+        weatherIconMap3.put(10, R.drawable.wsymbol_0017_cloudy_with_light_rain);
+        weatherIconMap3.put(11, R.drawable.wsymbol_0018_cloudy_with_heavy_rain);
+        weatherIconMap3.put(12, R.drawable.wsymbol_0018_cloudy_with_heavy_rain);
+        weatherIconMap3.put(13, R.drawable.wsymbol_0020_cloudy_with_heavy_snow);
+        weatherIconMap3.put(14, R.drawable.wsymbol_0020_cloudy_with_heavy_snow);
+        weatherIconMap3.put(15, R.drawable.wsymbol_0020_cloudy_with_heavy_snow);
+        weatherIconMap3.put(16, R.drawable.wsymbol_0020_cloudy_with_heavy_snow);
+        weatherIconMap3.put(17, R.drawable.wsymbol_0018_cloudy_with_heavy_rain);
+        weatherIconMap3.put(18, R.drawable.wsymbol_0018_cloudy_with_heavy_rain);
+        weatherIconMap3.put(19, R.drawable.wsymbol_0006_mist);
+        weatherIconMap3.put(20, R.drawable.wsymbol_0006_mist);
+        weatherIconMap3.put(21, R.drawable.wsymbol_0006_mist);
+        weatherIconMap3.put(22, R.drawable.wsymbol_0006_mist);
+        weatherIconMap3.put(23, R.drawable.wsymbol_0007_fog);
+        weatherIconMap3.put(24, R.drawable.wsymbol_0007_fog);
+        weatherIconMap3.put(25, R.drawable.wsymbol_0003_white_cloud);
+        weatherIconMap3.put(26, R.drawable.wsymbol_0003_white_cloud);
+        weatherIconMap3.put(27, R.drawable.wsymbol_0002_sunny_intervals);
+        weatherIconMap3.put(28, R.drawable.wsymbol_0002_sunny_intervals);
+        weatherIconMap3.put(29, R.drawable.wsymbol_0002_sunny_intervals);
+        weatherIconMap3.put(30, R.drawable.wsymbol_0002_sunny_intervals);
+        weatherIconMap3.put(31, R.drawable.wsymbol_0001_sunny);
+        weatherIconMap3.put(32, R.drawable.wsymbol_0001_sunny);
+        weatherIconMap3.put(33, R.drawable.wsymbol_0001_sunny);
+        weatherIconMap3.put(34, R.drawable.wsymbol_0001_sunny);
+        weatherIconMap3.put(35, R.drawable.wsymbol_0021_cloudy_with_sleet);
+        weatherIconMap3.put(36, R.drawable.wsymbol_0001_sunny);
+        weatherIconMap3.put(37, R.drawable.wsymbol_0024_thunderstorms);
+        weatherIconMap3.put(38, R.drawable.wsymbol_0024_thunderstorms);
+        weatherIconMap3.put(39, R.drawable.wsymbol_0024_thunderstorms);
+        weatherIconMap3.put(40, R.drawable.wsymbol_0017_cloudy_with_light_rain);
+        weatherIconMap3.put(41, R.drawable.wsymbol_0020_cloudy_with_heavy_snow);
+        weatherIconMap3.put(42, R.drawable.wsymbol_0020_cloudy_with_heavy_snow);
+        weatherIconMap3.put(43, R.drawable.wsymbol_0020_cloudy_with_heavy_snow);
+        weatherIconMap3.put(44, R.drawable.wsymbol_0003_white_cloud);
+        weatherIconMap3.put(45, R.drawable.wsymbol_0024_thunderstorms);
+        weatherIconMap3.put(46, R.drawable.wsymbol_0020_cloudy_with_heavy_snow);
+        weatherIconMap3.put(47, R.drawable.wsymbol_0024_thunderstorms);
+        weatherIconMap3.put(3200, R.drawable.wsymbol_0003_white_cloud);
+    }
+
+
+    public static int getIconId(String widgetType, int code) {
+
+        switch (widgetType){
+            case WeatherWidget.SIMPLE:
+                return weatherIconMap.containsKey(code) ? weatherIconMap.get(code) : R.drawable.simple_weather_icon_04;
+            case WeatherWidget.PICTURE:
+                return weatherIconMap2.containsKey(code) ? weatherIconMap2.get(code) : R.drawable.weather_2_clouds;
+            case WeatherWidget.THIN:
+                return weatherIconMap3.containsKey(code) ? weatherIconMap3.get(code) : R.drawable.wsymbol_0003_white_cloud;
+            default:
+                return weatherIconMap.containsKey(code) ? weatherIconMap.get(code) : R.drawable.simple_weather_icon_04;
+        }
     }
 
     public static void getWeather(final Activity activity, final PreferenceManager preferenceManager, final WeatherCallback callback, boolean force) {
@@ -141,7 +256,7 @@ public class StartPageLoader {
         requestWeather(preferenceManager, buildUrl(location), callback);
     }
 
-    private static void requestWeather(final PreferenceManager preferenceManager, String url, final WeatherCallback callback) {
+    public static void requestWeather(final PreferenceManager preferenceManager, String url, final WeatherCallback callback) {
         OkHttpClient client = new OkHttpClient();
 
         final Request request = new Request.Builder()
@@ -160,6 +275,7 @@ public class StartPageLoader {
                 callback.onWeatherResult(result);
                 if (result != null) {
                     result.setLastUpdateTime(new Date().getTime());
+                    result.setCecius(preferenceManager.getWeatherData().isCecius());
                 }
                 preferenceManager.setWeatherDataData(result);
                 response.close();
@@ -174,7 +290,7 @@ public class StartPageLoader {
     }
 
 
-    private static String buildUrl(String locationName) {
+    public static String buildUrl(String locationName) {
         return HttpUrl.parse("https://query.yahooapis.com/v1/public/yql?format=json&rnd=20175017&diagnostics=true&q=select%20*%20from%20" +
                 "weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text=%22" + locationName + "%22)"
         ).newBuilder().build().toString();

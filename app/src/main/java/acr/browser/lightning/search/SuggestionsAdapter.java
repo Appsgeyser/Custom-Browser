@@ -65,8 +65,10 @@ public class SuggestionsAdapter extends BaseAdapter implements Filterable {
 
     private final Comparator<HistoryItem> mFilterComparator = new SuggestionsComparator();
 
-    @Inject BookmarkModel mBookmarkManager;
-    @Inject PreferenceManager mPreferenceManager;
+    @Inject
+    BookmarkModel mBookmarkManager;
+    @Inject
+    PreferenceManager mPreferenceManager;
     @Inject Application mApplication;
 
     private final List<HistoryItem> mAllBookmarks = new ArrayList<>(5);

@@ -54,7 +54,8 @@ public class LightningDialogBuilder {
         INCOGNITO
     }
 
-    @Inject BookmarkModel mBookmarkManager;
+    @Inject
+    BookmarkModel mBookmarkManager;
     @Inject DownloadsModel mDownloadsModel;
     @Inject PreferenceManager mPreferenceManager;
 

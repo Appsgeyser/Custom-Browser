@@ -144,6 +144,10 @@ public class ThemeManager {
         return adjustAlpha(getPrimaryColor(theme), 0.7f);
     }
 
+    public int getTransparentColor(int color){
+        return adjustAlpha(color, 0.7f);
+    }
+
     private int adjustAlpha(int color, float factor) {
         int alpha = Math.round(Color.alpha(color) * factor);
         int red = Color.red(color);

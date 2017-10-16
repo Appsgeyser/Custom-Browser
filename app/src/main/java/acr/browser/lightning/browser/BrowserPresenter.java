@@ -143,6 +143,8 @@ public class BrowserPresenter {
             deleteTab(0);
         }
 
+
+
     }
 
     /**
@@ -183,7 +185,7 @@ public class BrowserPresenter {
         if (mTabsModel.size() == 1 && currentTab != null &&
                 (UrlUtils.isStartPageUrl(currentTab.getUrl()) ||
                         currentTab.getUrl().equals(mPreferences.getHomepage()))) {
-            mView.closeActivity();
+            mView.closeAllTabs();
             return;
         } else {
             if (isShown) {
@@ -192,6 +194,7 @@ public class BrowserPresenter {
             boolean currentDeleted = mTabsModel.deleteTab(position);
             if (currentDeleted) {
                 tabChanged(mTabsModel.indexOfCurrentTab());
+
             }
         }
 

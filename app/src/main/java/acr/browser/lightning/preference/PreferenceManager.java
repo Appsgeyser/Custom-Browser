@@ -5,18 +5,21 @@ import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import acr.browser.lightning.constant.Constants;
 import acr.browser.lightning.domain.GeoData;
 import acr.browser.lightning.domain.WeatherData;
 import acr.browser.lightning.download.DownloadHandler;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 @Singleton
 public class PreferenceManager {
 
     private static class Name {
+        static final String NOTIFICATION_SEARCH_BAR = "notificationsearchbar";
+        static final String NOTIFICATION_WEATHER = "notificationweather";
+
         static final String ADOBE_FLASH_SUPPORT = "enableflash";
         static final String BLOCK_ADS = "AdBlock";
         static final String BLOCK_IMAGES = "blockimages";
@@ -35,6 +38,7 @@ public class PreferenceManager {
         static final String SAVE_PASSWORDS = "passwords";
         static final String SEARCH = "search";
         static final String SEARCH_URL = "searchurl";
+        static final String BACKGROUND_URL = "backgroundurl";
         static final String TEXT_REFLOW = "textreflow";
         static final String TEXT_SIZE = "textsize";
         static final String USE_WIDE_VIEWPORT = "wideviewport";
@@ -60,6 +64,8 @@ public class PreferenceManager {
         static final String BLACK_STATUS_BAR = "blackStatusBar";
         static final String LAST_BANNER_SHOWN_TIME = "lastBannerShownTime";
 
+        static final String TOOL_BAR_STYLE = "toolBarStyle";
+
         static final String USE_PROXY = "useProxy";
         static final String PROXY_CHOICE = "proxyChoice";
         static final String USE_PROXY_HOST = "useProxyHost";
@@ -77,10 +83,18 @@ public class PreferenceManager {
         static final String WEATHER_CODE = "weatherCode";
         static final String WEATHER_TEXT = "weatherText";
         static final String WEATHER_UPDATE_TIME = "weatherUpdateTime";
+        static final String WEATHER_DEGREE_SYSTEM = "isCelsius";
 
 
         static final String BOOKMARKS_APPLIED = "bookmarksApplies";
         static final String SEARCH_APPLIED = "searchApplies";
+
+        //Ads settings
+        static final String ADS_NEW_INCOGNITO_TAB = "newIncognitoTab";
+        static final String ADS_NEW_TAB_IN_MINUTES = "newTabInMinutes";
+        static final String ADS_ON_HOME_PAGE_PRESSED = "onHomePagePressed";
+        static final String ADS_ON_FIRST_PAGE_LOAD_FINISHED = "onFirstPageFinishLoad";
+
 
         static final String LEAK_CANARY = "leakCanary";
         static final String ADV_ID = "advertisingId";
@@ -93,12 +107,13 @@ public class PreferenceManager {
         SUGGESTION_NONE
     }
 
-    @NonNull private final SharedPreferences mPrefs;
+    @NonNull
+    private final SharedPreferences mPrefs;
 
     private static final String PREFERENCES = "settings";
 
     @Inject
-    PreferenceManager(@NonNull final Context context) {
+    public PreferenceManager(@NonNull final Context context) {
         mPrefs = context.getSharedPreferences(PREFERENCES, 0);
     }
 
@@ -128,17 +143,19 @@ public class PreferenceManager {
     }
 
     public void setWeatherDataData(WeatherData weatherData) {
-        if(weatherData == null) {
+        if (weatherData == null) {
             mPrefs.edit().remove(Name.WEATHER_TEMP)
-           .remove(Name.WEATHER_CODE)
-           .remove(Name.WEATHER_TEXT)
-           .remove(Name.WEATHER_LOCATION)
-           .remove(Name.WEATHER_UPDATE_TIME).apply();
-        }else {
+                    .remove(Name.WEATHER_CODE)
+                    .remove(Name.WEATHER_TEXT)
+                    .remove(Name.WEATHER_LOCATION)
+                    .remove(Name.WEATHER_DEGREE_SYSTEM)
+                    .remove(Name.WEATHER_UPDATE_TIME).apply();
+        } else {
             putInt(Name.WEATHER_TEMP, weatherData.getTemp());
             putInt(Name.WEATHER_CODE, weatherData.getCode());
             putString(Name.WEATHER_TEXT, weatherData.getText());
             putString(Name.WEATHER_LOCATION, weatherData.getLocation());
+            putBoolean(Name.WEATHER_DEGREE_SYSTEM, weatherData.isCecius());
             putInt(Name.WEATHER_UPDATE_TIME, (int) (weatherData.getLastUpdateTime() / 1000));
         }
     }
@@ -149,6 +166,7 @@ public class PreferenceManager {
         weatherData.setTemp(mPrefs.getInt(Name.WEATHER_TEMP, 0));
         weatherData.setText(mPrefs.getString(Name.WEATHER_TEXT, ""));
         weatherData.setLocation(mPrefs.getString(Name.WEATHER_LOCATION, ""));
+        weatherData.setCecius(mPrefs.getBoolean(Name.WEATHER_DEGREE_SYSTEM, false));
         weatherData.setLastUpdateTime(mPrefs.getInt(Name.WEATHER_UPDATE_TIME, 0) * 1000L);
         return weatherData;
     }
@@ -156,7 +174,7 @@ public class PreferenceManager {
     public void setGeoData(GeoData geoData) {
         putString(Name.GEO_DATA_CITY_NAME, geoData.getCityName());
         putString(Name.GEO_DATA_COUNTRY_CODE, geoData.getCountryCode());
-        putInt(Name.GEO_DATA_LAST_UPDATE_TIME, (int)(geoData.getLastUpdateTime() / 1000));
+        putInt(Name.GEO_DATA_LAST_UPDATE_TIME, (int) (geoData.getLastUpdateTime() / 1000));
     }
 
     public GeoData getGeoData() {
@@ -191,9 +209,18 @@ public class PreferenceManager {
         return mPrefs.getBoolean(Name.BLOCK_ADS, false);
     }
 
+    public boolean getNotificationSearchBarEnabled() {
+        return mPrefs.getBoolean(Name.NOTIFICATION_SEARCH_BAR, true);
+    }
+
+    public boolean getNotificationWeatherEnabled() {
+        return mPrefs.getBoolean(Name.NOTIFICATION_WEATHER, true);
+    }
+
     public boolean getBlockImagesEnabled() {
         return mPrefs.getBoolean(Name.BLOCK_IMAGES, false);
     }
+
 
     public boolean getBlockThirdPartyCookiesEnabled() {
         return mPrefs.getBoolean(Name.BLOCK_THIRD_PARTY, false);
@@ -324,6 +351,10 @@ public class PreferenceManager {
         return mPrefs.getString(Name.SEARCH_URL, Constants.GOOGLE_SEARCH);
     }
 
+    public String getBackgroundUrl() {
+        return mPrefs.getString(Name.BACKGROUND_URL, null);
+    }
+
     public boolean getTextReflowEnabled() {
         return mPrefs.getBoolean(Name.TEXT_REFLOW, false);
     }
@@ -396,6 +427,12 @@ public class PreferenceManager {
         return mPrefs.getLong(Name.LAST_BANNER_SHOWN_TIME, 0);
     }
 
+    public String getToolBarStyle() {
+        return mPrefs.getString(Name.TOOL_BAR_STYLE, "default");
+    }
+
+
+
     public void setLastBannerShownTime(long time) {
         mPrefs.edit().putLong(Name.LAST_BANNER_SHOWN_TIME, time).apply();
     }
@@ -417,6 +454,38 @@ public class PreferenceManager {
         putBoolean(Name.BLACK_STATUS_BAR, enabled);
     }
 
+    public void setAdsNewIncognitoTab(boolean enabled) {
+        putBoolean(Name.ADS_NEW_INCOGNITO_TAB, enabled);
+    }
+
+    public boolean getAdsNewIncognitoTab() {
+        return mPrefs.getBoolean(Name.ADS_NEW_INCOGNITO_TAB, false);
+    }
+
+    public void setAdsNewTabInMinutes(int period) {
+        putInt(Name.ADS_NEW_TAB_IN_MINUTES, period);
+    }
+
+    public int getAdsNewTabInMinutes() {
+        return mPrefs.getInt(Name.ADS_NEW_TAB_IN_MINUTES, 1);
+    }
+
+    public void setAdsOnFirstPageLoadFinished(boolean enabled) {
+        putBoolean(Name.ADS_ON_FIRST_PAGE_LOAD_FINISHED, enabled);
+    }
+
+    public boolean getAdsOnFirstPageLoadFinished() {
+        return mPrefs.getBoolean(Name.ADS_ON_FIRST_PAGE_LOAD_FINISHED, false);
+    }
+
+    public void setAdsOnHomePagePressed(boolean enabled) {
+        putBoolean(Name.ADS_ON_HOME_PAGE_PRESSED, enabled);
+    }
+
+    public boolean getAdsOnHomePagePressed() {
+        return mPrefs.getBoolean(Name.ADS_ON_HOME_PAGE_PRESSED, false);
+    }
+
     public void setRemoveIdentifyingHeadersEnabled(boolean enabled) {
         putBoolean(Name.IDENTIFYING_HEADERS, enabled);
     }
@@ -435,6 +504,14 @@ public class PreferenceManager {
 
     public void setAdBlockEnabled(boolean enable) {
         putBoolean(Name.BLOCK_ADS, enable);
+    }
+
+    public void setNotificationSearchEnabled(boolean enable) {
+        putBoolean(Name.NOTIFICATION_SEARCH_BAR, enable);
+    }
+
+    public void setNotificationWeatherEnabled(boolean enable) {
+        putBoolean(Name.NOTIFICATION_WEATHER, enable);
     }
 
     public void setBlockImagesEnabled(boolean enable) {
@@ -557,6 +634,10 @@ public class PreferenceManager {
         putString(Name.SEARCH_URL, url);
     }
 
+    public void setBackgroundUrl(@NonNull String url) {
+        putString(Name.BACKGROUND_URL, url);
+    }
+
     public void setTextReflowEnabled(boolean enable) {
         putBoolean(Name.TEXT_REFLOW, enable);
     }
@@ -580,7 +661,6 @@ public class PreferenceManager {
     public boolean getUseLeakCanary() {
         return mPrefs.getBoolean(Name.LEAK_CANARY, false);
     }
-
 
 
     /**
@@ -617,4 +697,11 @@ public class PreferenceManager {
     public void setUseWideViewportEnabled(boolean enable) {
         putBoolean(Name.USE_WIDE_VIEWPORT, enable);
     }
+
+    public void setToolBarStyle(String style) {
+        putString(Name.TOOL_BAR_STYLE, style);
+    }
+
+
+
 }

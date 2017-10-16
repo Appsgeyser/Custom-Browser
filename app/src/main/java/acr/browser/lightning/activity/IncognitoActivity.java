@@ -11,8 +11,10 @@ import android.webkit.CookieSyncManager;
 import com.anthonycr.bonsai.Completable;
 import com.anthonycr.bonsai.CompletableAction;
 import com.anthonycr.bonsai.CompletableSubscriber;
+import com.appsgeyser.sdk.AppsgeyserSDK;
 
 import acr.browser.lightning.R;
+
 
 @SuppressWarnings("deprecation")
 public class IncognitoActivity extends BrowserActivity {
@@ -49,6 +51,13 @@ public class IncognitoActivity extends BrowserActivity {
     protected void onPause() {
         super.onPause();
         // saveOpenTabs();
+        AppsgeyserSDK.onPause(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AppsgeyserSDK.onResume(this);
     }
 
     @Override

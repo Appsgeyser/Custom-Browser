@@ -1,0 +1,54 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/notice_search_bar"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/picture"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="10dp"
+            android:drawablePadding="8dp"
+            android:drawableRight="@drawable/ic_search_black_24dp"
+            android:background="@drawable/notification_bg"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:alpha="1.0"
+            android:paddingRight="16dp"
+            android:text="@string/search_hint"
+            android:textColor="#B1BCBE"
+            android:textSize="20sp" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/text"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:layout_marginLeft="18dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="10dp"
+            android:drawablePadding="8dp"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:alpha="1.0"
+            android:paddingRight="16dp"
+            android:text="@string/search_hint"
+            android:textColor="#B1BCBE"
+            android:textSize="20sp" />
+    </FrameLayout>
+
+
+</FrameLayout>

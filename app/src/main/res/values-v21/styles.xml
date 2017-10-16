@@ -28,12 +28,19 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">@color/secondary_color</item>
         <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:actionButtonStyle">@style/MyActionButtonStyle</item>
+
         <!-- READ THIS:
             windowTranslucentStatus will set a semitransparent color to the status bar
             primaryColorDark will set a color below the actual status bar color that
                 will be below the navigation drawers, but above the content of the app
             windowDrawsSystemBarBackgrounds
         -->
+    </style>
+
+    <style name="MyActionButtonStyle" parent="Theme.BaseLightTheme">
+        <item name="android:minWidth">0dip</item>
+        <item name="android:padding">0dip</item>
     </style>
 
     <style name="Theme.DarkTheme" parent="Theme.BaseDarkTheme">

@@ -6,6 +6,8 @@ package acr.browser.lightning.activity;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -32,6 +34,7 @@ import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -74,6 +77,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.VideoView;
@@ -128,12 +132,13 @@ import acr.browser.lightning.view.SearchView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+import static acr.browser.lightning.activity.MainActivity.SEARCH_BAR_NOTIFICATION_ID;
+
 public abstract class BrowserActivity extends ThemableBrowserActivity implements BrowserView, UIController, OnClickListener {
 
+    public static final int ONE_MINUTE_BY_MILLISECONDS = 60 * 1000;
     private static final String TAG = "BrowserActivity";
-
     private static final String INTENT_PANIC_TRIGGER = "info.guardianproject.panic.action.TRIGGER";
-
     private static final String TAG_BOOKMARK_FRAGMENT = "TAG_BOOKMARK_FRAGMENT";
     private static final String TAG_TABS_FRAGMENT = "TAG_TABS_FRAGMENT";
     // Constant
@@ -144,6 +149,7 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
     private static final FrameLayout.LayoutParams COVER_SCREEN_PARAMS = new FrameLayout.LayoutParams(
             LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
     private final ColorDrawable mBackground = new ColorDrawable();
+    public SearchView mSearch;
     // Static Layout
     @BindView(R.id.drawer_layout)
     DrawerLayout mDrawerLayout;
@@ -172,8 +178,8 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
     // Proxy
     @Inject
     ProxyUtils mProxyUtils;
+    private boolean firstLaunch = true;
     private View mSearchBackground;
-    private SearchView mSearch;
     private ImageView mArrowImage;
     // Current tab view being displayed
     @Nullable
@@ -234,6 +240,8 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
     private AdView adView;
     private MenuItem mBackMenuItem;
     private MenuItem mForwardMenuItem;
+    public static final String TAB_POSITION_BOTTOM = "bottom";
+    public static final String TAB_POSITION_WIDGET = "widget";
 
     /**
      * Determines if an intent is originating
@@ -291,7 +299,11 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         BrowserApp.getAppComponent().inject(this);
-        setContentView(R.layout.activity_main);
+        if (BrowserApp.getConfig().getToolbarPosition().equals(TAB_POSITION_BOTTOM)) {
+            setContentView(R.layout.activity_main_bottom_toolbar);
+        } else {
+            setContentView(R.layout.activity_main);
+        }
         ButterKnife.bind(this);
 
         mTabsManager = new TabsManager();
@@ -393,8 +405,11 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
         actionBar.setDisplayShowTitleEnabled(false);
         actionBar.setDisplayShowHomeEnabled(false);
         actionBar.setDisplayShowCustomEnabled(true);
-        actionBar.setCustomView(R.layout.toolbar_content);
-
+        if (mPreferences.getToolBarStyle().equals("transparent")) {
+            actionBar.setCustomView(R.layout.toolbar_content_transparent);
+        } else {
+            actionBar.setCustomView(R.layout.toolbar_content);
+        }
         View customView = actionBar.getCustomView();
         LayoutParams lp = customView.getLayoutParams();
         lp.width = LayoutParams.MATCH_PARENT;
@@ -442,6 +457,15 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
         // create the search EditText in the ToolBar
         mSearch = customView.findViewById(R.id.search);
         mSearchBackground = customView.findViewById(R.id.search_container);
+
+        if (mPreferences.getToolBarStyle().equals("transparent")) {
+            mSearchBackground.setBackgroundResource(R.drawable.card_bg_transparent);
+        } else if (mPreferences.getToolBarStyle().equals("rounded")) {
+            mSearchBackground.setBackgroundResource(R.drawable.card_bg_rounded);
+        } else {
+            mSearchBackground.setBackgroundResource(R.drawable.card_bg);
+        }
+
 
         // initialize search background color
         int searchbarColor = BrowserApp.getThemeManager().getPrimaryColor(theme);
@@ -494,12 +518,6 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
             mPresenter.setupTabs(intent);
             setIntent(null);
             mProxyUtils.checkForProxy(this);
-        }
-
-        if (mFullScreen) {
-            showActionBar();
-            mToolbarLayout.setTranslationY(0);
-            setWebViewTranslation(mToolbarLayout.getHeight());
         }
     }
 
@@ -690,6 +708,7 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
                 case KeyEvent.KEYCODE_W:
                     // Close current tab
                     mPresenter.deleteTab(mTabsManager.indexOfCurrentTab());
+
                     return true;
                 case KeyEvent.KEYCODE_Q:
                     // Close browser
@@ -762,7 +781,20 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
             case R.id.action_new_tab:
                 newTab(null, true);
                 return true;
+            case R.id.action_market:
+                AppsgeyserSDK.isOfferWallEnabled(this, new AppsgeyserSDK.OfferWallEnabledListener() {
+                    @Override
+                    public void isOfferWallEnabled(boolean isEnabled) {
+                        if (isEnabled) {
+                            AppsgeyserSDK.showAdWall(BrowserActivity.this);
+                        }
+                    }
+                });
+                return true;
             case R.id.action_incognito:
+                if (mPreferences.getAdsNewIncognitoTab()) {
+                    showInterstitialAd();
+                }
                 startActivity(new Intent(this, IncognitoActivity.class));
                 overridePendingTransition(R.anim.slide_up_in, R.anim.fade_out_scale);
                 return true;
@@ -803,6 +835,9 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
                     read.putExtra(Constants.LOAD_READING_URL, currentUrl);
                     startActivity(read);
                 }
+                return true;
+            case R.id.main_menu_about_dialog:
+                AppsgeyserSDK.showAboutDialog(this);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -937,9 +972,28 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
                 new BrowserDialog.Item(R.string.close_all_tabs) {
                     @Override
                     public void onClick() {
-                        closeBrowser();
+//                        closeBrowser();
+                        closeAllTabs();
                     }
                 });
+    }
+
+    public void closeAllTabs() {
+        ImageView imageView = (ImageView) findViewById(R.id.content_frame_background);
+        imageView.setImageDrawable(BrowserApp.getConfig().getBackground());
+        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        removeViewFromParent(mCurrentView);
+        performExitCleanUp();
+        int size = mTabsManager.size();
+        mTabsManager.shutdown();
+        mCurrentView = null;
+        for (int n = 0; n < size; n++) {
+            mTabsView.tabRemoved(0);
+            mTabsManager.deleteTab(0);
+        }
+
+        mPresenter.newTab(null, true);
+
     }
 
     @Override
@@ -950,16 +1004,19 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
 
     @Override
     public void notifyTabClosed(String title, OnClickListener onClickListener) {
-        Snackbar mySnackbar = Snackbar.make(getTabModel().getCurrentTab().getView(),
-                getResources().getString(R.string.tab_deleted, title), Snackbar.LENGTH_SHORT);
-        mySnackbar.setAction(android.R.string.cancel, onClickListener);
-        mySnackbar.show();
+        if (getTabModel().getCurrentTab() != null && getTabModel().getCurrentTab().getView() != null) {
+            Snackbar mySnackbar = Snackbar.make(getTabModel().getCurrentTab().getView(),
+                    getResources().getString(R.string.tab_deleted, title), Snackbar.LENGTH_SHORT);
+            mySnackbar.setAction(android.R.string.cancel, onClickListener);
+            mySnackbar.show();
+        }
     }
 
     @Override
     public void notifyTabViewAdded() {
         Log.d(TAG, "Notify Tab Added");
         mTabsView.tabAdded();
+        mToolbar.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -990,7 +1047,6 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
         removeViewFromParent(mCurrentView);
 
         mCurrentView = null;
-
         // Use a delayed handler to make the transition smooth
         // otherwise it will get caught up with the showTab code
         // and cause a janky motion
@@ -1303,6 +1359,7 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
         if (isIncognito() && isFinishing()) {
             overridePendingTransition(R.anim.fade_in_scale, R.anim.slide_down_out);
         }
+        AppsgeyserSDK.onPause(this);
     }
 
     void saveOpenTabs() {
@@ -1370,6 +1427,9 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
         } else {
             putToolbarInRoot();
         }
+        AppsgeyserSDK.onResume(this);
+
+
     }
 
     /**
@@ -1579,7 +1639,7 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
     /**
      * function that opens the HTML history page in the browser
      */
-    private void openHistory() {
+    public void openHistory() {
         new HistoryPage().getHistoryPage()
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.main())
@@ -1595,7 +1655,7 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
                 });
     }
 
-    private void openDownloads() {
+    public void openDownloads() {
         new DownloadsPage().getDownloadsPage()
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.main())
@@ -1954,11 +2014,16 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
 
     @Override
     public void onHomeButtonPressed() {
+        if (mPreferences.getAdsOnHomePagePressed()) {
+            showInterstitialAd();
+        }
+
         final LightningView currentTab = mTabsManager.getCurrentTab();
         if (currentTab != null) {
             currentTab.loadHomepage();
             closeDrawers(null);
         }
+
     }
 
     /**
@@ -1999,32 +2064,35 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
     @Override
     public void showInterstitialAd() {
         long timeDifference = System.currentTimeMillis() - mPreferences.getLastBannerShownTime();
-        if (timeDifference >= 8 * 60 * 1000) {
-            mPreferences.setLastBannerShownTime(System.currentTimeMillis());
-            AppsgeyserSDK.setActivity(this);
-            final FullScreenBanner fullScreenBanner = AppsgeyserSDK.getFullScreenBanner();
-            fullScreenBanner.load();
-            fullScreenBanner.setListener(new IFullScreenBannerListener() {
-                @Override
-                public void onLoadStarted() {
-                    Log.d("Fullscreen", "started");
-                }
+        if (timeDifference >= (ONE_MINUTE_BY_MILLISECONDS * mPreferences.getAdsNewTabInMinutes())) {
+            AppsgeyserSDK
+                    .getFullScreenBanner(this)
+                    .load(com.appsgeyser.sdk.configuration.Constants.BannerLoadTags.ON_TIMEOUT_PASSED);
+            AppsgeyserSDK
+                    .getFullScreenBanner(this)
+                    .setListener(new IFullScreenBannerListener() {
+                        @Override
+                        public void onLoadStarted() {
 
-                @Override
-                public void onLoadFinished() {
-                    fullScreenBanner.show();
-                }
+                        }
 
-                @Override
-                public void onAdFailedToLoad() {
-                    Log.e("Fullscreen", "failed");
-                }
+                        @Override
+                        public void onLoadFinished(FullScreenBanner fullScreenBanner) {
+                            AppsgeyserSDK
+                                    .getFullScreenBanner(getApplicationContext()).show();
+                            mPreferences.setLastBannerShownTime(System.currentTimeMillis());
+                        }
 
-                @Override
-                public void onAdHided() {
+                        @Override
+                        public void onAdFailedToLoad(Context context, String s) {
 
-                }
-            });
+                        }
+
+                        @Override
+                        public void onAdHided(Context context, String s) {
+
+                        }
+                    });
         }
     }
 
@@ -2171,9 +2239,13 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
                 newTab(url, false);
                 break;
             case INCOGNITO:
+                if (mPreferences.getAdsNewIncognitoTab()) {
+                    showInterstitialAd();
+                }
                 Intent intent = new Intent(BrowserActivity.this, IncognitoActivity.class);
                 intent.setData(Uri.parse(url));
                 startActivity(intent);
+
                 overridePendingTransition(R.anim.slide_up_in, R.anim.fade_out_scale);
                 break;
         }
@@ -2266,6 +2338,33 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         PermissionsManager.getInstance().notifyPermissionsChange(permissions, grantResults);
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    public void onPageLoadFinish() {
+        if (mPreferences.getAdsOnFirstPageLoadFinished() && firstLaunch) {
+            firstLaunch = false;
+            showInterstitialAd();
+        }
+    }
+
+    public void createNotice() {
+        final RemoteViews remoteViews = new RemoteViews(this.getPackageName(), R.layout.notification_search_bar);
+        final NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(this)
+                        .setSmallIcon(R.drawable.ic_search_white_24dp)
+                        .setContent(remoteViews).setOngoing(true);
+
+        final Intent resultIntent = new Intent(this, MainActivity.class);
+        resultIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        resultIntent.putExtra("focus", true);
+
+        final PendingIntent pIntent = PendingIntent.getActivity(getApplicationContext(), 1012, resultIntent, 0);
+        mBuilder.setContentIntent(pIntent);
+        final NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(SEARCH_BAR_NOTIFICATION_ID, mBuilder.build());
     }
 
     private class SearchListenerClass implements OnKeyListener, OnEditorActionListener,
@@ -2415,4 +2514,5 @@ public abstract class BrowserActivity extends ThemableBrowserActivity implements
         }
 
     }
+
 }

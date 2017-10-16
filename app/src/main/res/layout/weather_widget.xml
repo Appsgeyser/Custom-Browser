@@ -1,115 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/weatherWidget"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
     android:layout_marginBottom="8dp"
     android:layout_marginLeft="8dp"
     android:layout_marginRight="8dp"
 
-    android:id="@+id/weatherWidget"
-    card_view:cardCornerRadius="4dp">
+    android:layout_marginTop="8dp"
+    card_view:cardCornerRadius="4dp"
+    card_view:cardBackgroundColor="#000">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="16dp"
+        android:orientation="horizontal">
 
         <LinearLayout
+            android:id="@+id/locationPanel"
             android:layout_width="match_parent"
             android:layout_height="44dp"
-            android:layout_marginTop="8dp"
-            android:id="@+id/locationPanel">
+            android:layout_marginTop="8dp">
+
             <TextView
+                android:id="@+id/location"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center_horizontal|center_vertical"
                 android:text="@string/noWeatherData"
-                android:textColor="#fff"
-                android:id="@+id/location"
-                android:textSize="34sp"
                 android:textAlignment="center"
-                />
+                android:textColor="#fff"
+                android:textSize="34sp" />
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/temperaturePanel"
             android:layout_width="200dp"
             android:layout_height="110dp"
+            android:layout_below="@id/locationPanel"
             android:layout_marginLeft="16dp"
             android:orientation="horizontal"
-            android:layout_below="@id/locationPanel"
-            android:id="@+id/temperaturePanel"
             android:visibility="gone">
 
             <TextView
+                android:id="@+id/temperature"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="64°"
-                android:id="@+id/temperature"
-                android:textColor="#fff"
-                android:textSize="100sp"
                 android:layout_marginTop="-14dp"
-                android:gravity="center_vertical" />
+                android:gravity="center_vertical"
+                android:text="64°"
+                android:textColor="#fff"
+                android:textSize="100sp" />
 
             <RelativeLayout
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="8dp"
+                android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/celsiusButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="C"
-                    android:textColor="#fff"
-                    android:textSize="30sp"
-                    android:layout_alignParentBottom="true"
+
                     android:layout_alignParentLeft="true"
                     android:layout_alignParentStart="true"
-                    android:id="@+id/celsiusButton"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
                     android:text="F"
-                    android:id="@+id/fahrenheitButton"
                     android:textColor="#fff"
-                    android:textSize="30sp"
-                    android:layout_centerHorizontal="true"
-                    android:layout_above="@+id/celsiusButton" />
+                    android:textSize="48sp" />
             </RelativeLayout>
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/imagePanel"
             android:layout_width="wrap_content"
             android:layout_height="110dp"
-            android:layout_gravity="bottom"
-            android:orientation="vertical"
-            android:layout_alignParentRight="true"
-            android:id="@+id/imagePanel"
-            android:visibility="gone"
-            android:layout_below="@id/locationPanel"
             android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_below="@id/locationPanel"
+            android:layout_gravity="bottom"
             android:layout_marginRight="16dp"
-
+            android:layout_toEndOf="@+id/temperaturePanel"
             android:layout_toRightOf="@+id/temperaturePanel"
-            android:layout_toEndOf="@+id/temperaturePanel">
+
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
-                android:layout_marginTop="16dp"
+                android:id="@+id/weatherText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:text="Mostly cloudy"
-                android:id="@+id/weatherText"
                 android:textAlignment="center"
+                android:gravity="center_horizontal"
                 android:textColor="#fff"
                 android:textSize="20sp" />
 
             <ImageView
+                android:id="@+id/weather_icon"
                 android:layout_width="50dp"
                 android:layout_height="wrap_content"
-                android:id="@+id/weather_icon"
                 android:layout_gravity="center_horizontal|center_vertical"
                 android:src="@drawable/simple_weather_icon_01" />
         </LinearLayout>

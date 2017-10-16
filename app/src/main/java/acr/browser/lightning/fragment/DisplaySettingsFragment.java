@@ -5,12 +5,18 @@ package acr.browser.lightning.fragment;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
@@ -19,11 +25,20 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+
 import acr.browser.lightning.R;
 import acr.browser.lightning.dialog.BrowserDialog;
 
+import static android.app.Activity.RESULT_OK;
+
 public class DisplaySettingsFragment extends LightningPreferenceFragment implements Preference.OnPreferenceClickListener, Preference.OnPreferenceChangeListener {
 
+    private static final String TAG = "DisplaySettingsFragment";
+
+    private static final String SETTINGS_HOMEPAGEBACKGROUND = "setHomePageBackground";
     private static final String SETTINGS_HIDESTATUSBAR = "fullScreenOption";
     private static final String SETTINGS_FULLSCREEN = "fullscreen";
     private static final String SETTINGS_VIEWPORT = "wideViewPort";
@@ -46,6 +61,25 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
     private String[] mThemeOptions;
     private int mCurrentTheme;
 
+    private static float getTextSize(int size) {
+        switch (size) {
+            case 0:
+                return XSMALL;
+            case 1:
+                return SMALL;
+            case 2:
+                return MEDIUM;
+            case 3:
+                return LARGE;
+            case 4:
+                return XLARGE;
+            case 5:
+                return XXLARGE;
+            default:
+                return MEDIUM;
+        }
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,6 +98,7 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
 
         mTheme = findPreference(SETTINGS_THEME);
         Preference textSize = findPreference(SETTINGS_TEXTSIZE);
+        Preference homePageBg = findPreference(SETTINGS_HOMEPAGEBACKGROUND);
         CheckBoxPreference cbStatus = (CheckBoxPreference) findPreference(SETTINGS_HIDESTATUSBAR);
         CheckBoxPreference cbFullScreen = (CheckBoxPreference) findPreference(SETTINGS_FULLSCREEN);
         CheckBoxPreference cbViewPort = (CheckBoxPreference) findPreference(SETTINGS_VIEWPORT);
@@ -73,6 +108,7 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
         CheckBoxPreference cbSwapTabs = (CheckBoxPreference) findPreference(SETTINGS_SWAPTABS);
 
         mTheme.setOnPreferenceClickListener(this);
+        homePageBg.setOnPreferenceClickListener(this);
         textSize.setOnPreferenceClickListener(this);
         cbStatus.setOnPreferenceChangeListener(this);
         cbFullScreen.setOnPreferenceChangeListener(this);
@@ -101,6 +137,9 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
                 return true;
             case SETTINGS_TEXTSIZE:
                 textSizePicker();
+                return true;
+            case SETTINGS_HOMEPAGEBACKGROUND:
+                imagePicker();
                 return true;
             default:
                 return false;
@@ -169,22 +208,31 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
         BrowserDialog.setDialogSize(mActivity, dialog);
     }
 
-    private static float getTextSize(int size) {
-        switch (size) {
-            case 0:
-                return XSMALL;
-            case 1:
-                return SMALL;
-            case 2:
-                return MEDIUM;
-            case 3:
-                return LARGE;
-            case 4:
-                return XLARGE;
-            case 5:
-                return XXLARGE;
-            default:
-                return MEDIUM;
+    private void imagePicker() {
+        Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+        photoPickerIntent.setType("image/*");
+        startActivityForResult(photoPickerIntent, 1);
+        Log.d(TAG, "imagePicker");
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == 1 && resultCode == RESULT_OK) {
+            // The openfileOutput() method creates a file on the phone/internal storage in the context of your application
+            final FileOutputStream fos;
+            try {
+                final Uri imageUri = data.getData();
+                final InputStream imageStream;
+                imageStream = getActivity().getContentResolver().openInputStream(imageUri);
+                final Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
+                fos = getActivity().openFileOutput("back.jpg", Context.MODE_PRIVATE);
+                selectedImage.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            mPreferenceManager.setBackgroundUrl("back.jpg");
         }
     }
 
@@ -204,15 +252,15 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
             }
         });
         picker.setPositiveButton(getResources().getString(R.string.action_ok),
-            new DialogInterface.OnClickListener() {
+                new DialogInterface.OnClickListener() {
 
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    if (mCurrentTheme != mPreferenceManager.getUseTheme()) {
-                        getActivity().onBackPressed();
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (mCurrentTheme != mPreferenceManager.getUseTheme()) {
+                            getActivity().onBackPressed();
+                        }
                     }
-                }
-            });
+                });
         picker.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialog) {
@@ -229,7 +277,9 @@ public class DisplaySettingsFragment extends LightningPreferenceFragment impleme
 
         private final TextView mSample;
 
-        public TextSeekBarListener(TextView sample) {this.mSample = sample;}
+        public TextSeekBarListener(TextView sample) {
+            this.mSample = sample;
+        }
 
         @Override
         public void onProgressChanged(SeekBar view, int size, boolean user) {

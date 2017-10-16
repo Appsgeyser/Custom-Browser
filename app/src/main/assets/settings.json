@@ -1,64 +1,91 @@
 {
   "browserLinks": [
     {
-      "title": "Google",
-      "url": "https:\/\/www.google.ru\/",
+      "title": "rererere",
+      "url": "https:\/\/www.rottentomatoes.com\/",
       "icon": ""
     },
     {
-      "title": "Amazon",
-      "url": "https:\/\/www.amazon.com\/",
+      "title": "4r34r3",
+      "url": "https:\/\/www.rottentomatoes.com\/",
       "icon": ""
     },
     {
-      "title": "Reddit",
-      "url": "https:\/\/www.reddit.com\/",
+      "title": "wefe",
+      "url": "https:\/\/www.rottentomatoes.com\/",
       "icon": ""
     },
     {
-      "title": "Vimeo",
-      "url": "https:\/\/vimeo.com\/",
+      "title": "wefewfewefwfewfwe",
+      "url": "https:\/\/www.rottentomatoes.com\/",
       "icon": ""
     },
     {
-      "title": "Coub",
-      "url": "http:\/\/coub.com\/",
+      "title": "tttrge",
+      "url": "https:\/\/www.rottentomatoes.com\/",
       "icon": ""
     },
     {
-      "title": "Facebook",
-      "url": "https:\/\/www.facebook.com\/",
-      "icon": ""
-    },
-    {
-      "title": "Twitter",
-      "url": "https:\/\/twitter.com\/",
-      "icon": ""
-    },
-    {
-      "title": "Pinterest",
-      "url": "https:\/\/pinterest.com\/",
-      "icon": ""
-    },
-    {
-      "title": "Tumblr",
-      "url": "http:\/\/www.tumblr.com\/",
-      "icon": ""
-    },
-    {
-      "title": "Linkedin",
-      "url": "https:\/\/www.linkedin.com\/",
+      "title": "ergerg",
+      "url": "https:\/\/www.rottentomatoes.com\/",
       "icon": ""
     }
   ],
-  "name": "browser",
-  "template": "browserV3",
+  "backgroundImage": "uploaded_data\/crop59db569b1df67.jpg",
+  "homepageTabs": {
+    "homepageTabs": "custom",
+    "widgetsMargins": true,
+    "widgets": {
+      "downloadsWidget": {
+        "downloadsWidgetType": "downloadsListTransparent",
+        "downloadsWidgetColor": "#009688",
+        "downloadsWidgetEnabled": false,
+        "sortPosition": 0
+      },
+      "weatherWidget": {
+        "weatherWidgetType": "weatherSimple",
+        "weatherWidgetColor": "#2196f3",
+        "weatherWidgetEnabled": false,
+        "sortPosition": 1
+      },
+      "bookmarkWidget": {
+        "bookmarkWidgetType": "bookmarkList2Columns",
+        "bookmarkWidgetColor": "#fdd835",
+        "bookmarkWidgetEnabled": false,
+        "sortPosition": 2
+      },
+      "historyWidget": {
+        "historyWidgetType": "historyListTransparent",
+        "historyWidgetColor": "#e91e63",
+        "historyWidgetEnabled": true,
+        "sortPosition": 3
+      },
+      "newsWidget": {
+        "newsWidgetType": "newsListTransparent",
+        "newsWidgetColor": "#9c27b0",
+        "newsTabsPosition": "widget",
+        "sortPosition": 4
+      }
+    },
+    "homePageUrl": "uploaded_data\/homepage_59daedc8d18a2_59db56ad27cfd.html",
+    "startPageUrl": ""
+  },
+  "viewSettings": {
+    "toolBarStyle": "default",
+    "toolbarPosition": "bottom",
+    "tabsInNavigationDrawer": false,
+    "swapDrawers": "false",
+    "hidedStatusBar": true,
+    "fullScreenMode": false,
+    "searchBarNotificationEnabled": false,
+    "weatherNotificationEnabled": true
+  },
+  "name": "HW1",
+  "template": "browserV5Test",
   "icon": "uploaded_data\/icon.png",
-  "backgroundImage": "uploaded_data\/background.jpg",
-
   "themeColors": {
-    "colorPrimary": "#009688",
-    "colorPrimaryDark": "#004d40",
-    "colorAccent": "#00bfa5"
+    "colorPrimary": "#2196f3",
+    "colorPrimaryDark": "#1976D2",
+    "colorAccent": "#448aff"
   }
 }

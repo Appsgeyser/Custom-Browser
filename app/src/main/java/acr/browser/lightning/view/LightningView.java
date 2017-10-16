@@ -5,7 +5,6 @@
 package acr.browser.lightning.view;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -20,6 +19,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.util.ArrayMap;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -29,11 +29,13 @@ import android.view.View.OnTouchListener;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebSettings.LayoutAlgorithm;
 import android.webkit.WebSettings.PluginState;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import com.anthonycr.bonsai.Schedulers;
 import com.anthonycr.bonsai.Single;
@@ -182,6 +184,7 @@ public class LightningView {
         mWebView.setNetworkAvailable(true);
         mWebView.setWebChromeClient(new LightningChromeClient(activity, this));
         mWebView.setWebViewClient(new LightningWebClient(activity, this));
+        mWebView.addJavascriptInterface(new JavaScriptHandler(activity), "Android");
         mWebView.setDownloadListener(new LightningDownloadListener(activity));
         mGestureDetector = new GestureDetector(activity, new CustomGestureListener());
         mWebView.setOnTouchListener(new TouchListener());
@@ -201,7 +204,7 @@ public class LightningView {
     }
 
     public void setView(String url){
-        if(url.endsWith(StartPage.FILENAME) && homePage != null){
+        if((url.endsWith(StartPage.FILENAME) || (!BrowserApp.getConfig().getHomePageUrl().equals("") && url.endsWith(BrowserApp.getConfig().getHomePageUrl()))) && homePage != null){
             container.removeAllViews();
             container.addView(homePage);
             container.setTranslationY(translationY);
@@ -278,32 +281,36 @@ public class LightningView {
      * UI thread.
      */
     public void loadStartpage() {
-        HomepageView homepageView = new HomepageView(mActivity, mIsIncognitoTab, mPreferences);
-        homePage = homepageView.getView();
-        homepageView.setUrlClickedListener(new HomepageView.UrlClickedListener() {
-            @Override
-            public void onUrlClicked(String url) {
-                Preconditions.checkNonNull(url);
-                loadUrl(url);
-            }
-        });
+        if(BrowserApp.getConfig().getHomePageUrl().equals("")) {
+            HomepageView homepageView = new HomepageView(mActivity, mIsIncognitoTab, mPreferences);
+            homePage = homepageView.getView();
+            homepageView.setUrlClickedListener(new HomepageView.UrlClickedListener() {
+                @Override
+                public void onUrlClicked(String url) {
+                    Preconditions.checkNonNull(url);
+                    loadUrl(url);
+                }
+            });
 
-        new StartPage().getHomepage()
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.main())
-                .subscribe(new SingleOnSubscribe<String>() {
-                    @Override
-                    public void onItem(@Nullable String item) {
-                        Preconditions.checkNonNull(item);
-                        loadUrl(item);
-                    }
-                });
+            new StartPage().getHomepage()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.main())
+                    .subscribe(new SingleOnSubscribe<String>() {
+                        @Override
+                        public void onItem(@Nullable String item) {
+                            Preconditions.checkNonNull(item);
+                            loadUrl(item);
+                        }
+                    });
+        }else {
+            loadUrl("file:///android_asset/" + BrowserApp.getConfig().getHomePageUrl());
+        }
     }
 
     public void setTranslationY(float translationY) {
         this.translationY = translationY;
         if(url != null) {
-            if (url.endsWith(StartPage.FILENAME) && homePage != null) {
+            if ((url.endsWith(StartPage.FILENAME) || (!BrowserApp.getConfig().getHomePageUrl().equals("") && url.endsWith(BrowserApp.getConfig().getHomePageUrl()))) && homePage != null) {
                 container.setTranslationY(translationY);
                 container.setPadding(0, 0, 0, (int) translationY);
             } else {
@@ -1012,6 +1019,30 @@ public class LightningView {
             return mWebView.getSettings().getUserAgentString();
         } else {
             return "";
+        }
+    }
+
+    public void downloadVideo() {
+        if (mWebView != null) {
+            mWebView.loadUrl("javascript:setTimeout(test(), 500)");
+        }
+    }
+
+
+
+    public class JavaScriptHandler {
+        Context mContext;
+
+        public JavaScriptHandler(Context context) {
+            mContext = context;
+        }
+
+        @JavascriptInterface
+        public void downloadVideoByUrl(String[] videos){
+            for (String url: videos) {
+                Utils.downloadFile(mActivity, mPreferences, url, "Mozilla/5.0", "attachment");
+                Toast.makeText(mActivity, url, Toast.LENGTH_SHORT).show();
+            }
         }
     }
 

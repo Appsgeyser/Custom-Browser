@@ -64,7 +64,8 @@ public class StartPage {
     @NonNull private final String mTitle;
 
     @Inject Application mApp;
-    @Inject PreferenceManager mPreferenceManager;
+    @Inject
+    PreferenceManager mPreferenceManager;
 
     public StartPage() {
         BrowserApp.getAppComponent().inject(this);

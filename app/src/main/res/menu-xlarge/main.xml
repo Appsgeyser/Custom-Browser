@@ -36,6 +36,12 @@
         android:visible="true"
         app:showAsAction="ifRoom"/>
     <item
+        android:id="@+id/action_market"
+        android:title="@string/action_market"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_menu_offer_wall"
+        />
+    <item
         android:id="@+id/action_new_tab"
         android:title="@string/action_new_tab"/>
     <item
@@ -71,5 +77,8 @@
     <item
         android:id="@+id/action_settings"
         android:title="@string/settings"/>
+    <item
+        android:id="@+id/main_menu_about_dialog"
+        android:title="@string/appsgeysersdk_about_item"/>
 
 </menu>

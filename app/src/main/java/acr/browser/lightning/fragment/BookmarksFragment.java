@@ -54,7 +54,6 @@ import acr.browser.lightning.preference.PreferenceManager;
 import acr.browser.lightning.utils.ImageLoader;
 import acr.browser.lightning.utils.Preconditions;
 import acr.browser.lightning.utils.SubscriptionUtils;
-import acr.browser.lightning.view.HomepageView;
 import acr.browser.lightning.view.LightningView;
 import butterknife.BindView;
 import butterknife.ButterKnife;

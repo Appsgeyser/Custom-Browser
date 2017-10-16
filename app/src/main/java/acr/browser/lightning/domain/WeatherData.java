@@ -10,6 +10,7 @@ public class WeatherData {
     private String text;
     private int code;
     private long lastUpdateTime;
+    private boolean isCecius;
     //------------------------------------------------------
 
     public String getLocation() {
@@ -50,6 +51,14 @@ public class WeatherData {
 
     public void setCode(int code) {
         this.code = code;
+    }
+
+    public boolean isCecius() {
+        return isCecius;
+    }
+
+    public void setCecius(boolean cecius) {
+        isCecius = cecius;
     }
 
     @Override

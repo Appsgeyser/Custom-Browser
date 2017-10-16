@@ -15,7 +15,6 @@ import com.anthonycr.bonsai.Completable;
 import com.anthonycr.bonsai.CompletableAction;
 import com.anthonycr.bonsai.CompletableOnSubscribe;
 import com.anthonycr.bonsai.CompletableSubscriber;
-import com.anthonycr.bonsai.Scheduler;
 import com.anthonycr.bonsai.Schedulers;
 import com.anthonycr.bonsai.Single;
 import com.anthonycr.bonsai.SingleAction;

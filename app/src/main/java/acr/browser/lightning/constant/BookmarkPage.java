@@ -79,7 +79,8 @@ public final class BookmarkPage {
     private File mCacheDir;
 
     @Inject Application mApp;
-    @Inject BookmarkModel mManager;
+    @Inject
+    BookmarkModel mManager;
 
     @NonNull private final Bitmap mFolderIcon;
     @NonNull private final String mTitle;
