@@ -5,13 +5,20 @@ package acr.browser.lightning.fragment;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
+import android.preference.PreferenceCategory;
 import android.support.annotation.NonNull;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.Editable;
@@ -20,16 +27,26 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.RemoteViews;
+
+import com.appsgeyser.sdk.AppsgeyserSDK;
+import com.appsgeyser.sdk.ads.fastTrack.adapters.FastTrackBaseAdapter;
+import com.appsgeyser.sdk.ads.rewardedVideo.rewardedFacades.RewardedVideoFacade;
 
 import acr.browser.lightning.BuildConfig;
 import acr.browser.lightning.R;
+
+import acr.browser.lightning.activity.MainActivity;
+import acr.browser.lightning.app.BrowserApp;
 import acr.browser.lightning.constant.Constants;
 import acr.browser.lightning.dialog.BrowserDialog;
 import acr.browser.lightning.download.DownloadHandler;
+import acr.browser.lightning.notifiction.WeatherNotification;
 import acr.browser.lightning.utils.ProxyUtils;
 import acr.browser.lightning.utils.ThemeUtils;
 import acr.browser.lightning.utils.Utils;
 
+import static acr.browser.lightning.activity.MainActivity.SEARCH_BAR_NOTIFICATION_ID;
 import static acr.browser.lightning.preference.PreferenceManager.Suggestion;
 
 public class GeneralSettingsFragment extends LightningPreferenceFragment implements Preference.OnPreferenceClickListener, Preference.OnPreferenceChangeListener {
@@ -40,6 +57,9 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
     private static final String SETTINGS_IMAGES = "cb_images";
     private static final String SETTINGS_JAVASCRIPT = "cb_javascript";
     private static final String SETTINGS_COLORMODE = "cb_colormode";
+    public static final String SETTINGS_NOTIFICATION_SEARCH_BAR = "cb_notification_search_bar";
+    public static final String SETTINGS_NOTIFICATION_WEATHER = "cb_notification_weather";
+
     private static final String SETTINGS_USERAGENT = "agent";
     private static final String SETTINGS_DOWNLOAD = "download";
     private static final String SETTINGS_HOME = "home";
@@ -48,7 +68,8 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
     private Activity mActivity;
     private static final int API = android.os.Build.VERSION.SDK_INT;
     private CharSequence[] mProxyChoices;
-    private Preference proxy, useragent, downloadloc, home, searchengine, searchsSuggestions;
+    private Preference proxy, useragent, downloadloc, home, searchengine, searchsSuggestions, notificationSearchBar;
+
     private String mDownloadLocation;
     private int mAgentChoice;
     private String mHomepage;
@@ -65,6 +86,7 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
     }
 
     private void initPrefs() {
+
         proxy = findPreference(SETTINGS_PROXY);
         useragent = findPreference(SETTINGS_USERAGENT);
         downloadloc = findPreference(SETTINGS_DOWNLOAD);
@@ -74,9 +96,10 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
 
         CheckBoxPreference cbFlash = (CheckBoxPreference) findPreference(SETTINGS_FLASH);
         CheckBoxPreference cbAds = (CheckBoxPreference) findPreference(SETTINGS_ADS);
+        CheckBoxPreference cbSearchBar = (CheckBoxPreference) findPreference(SETTINGS_NOTIFICATION_SEARCH_BAR);
+        CheckBoxPreference cbWeatherBar = (CheckBoxPreference) findPreference(SETTINGS_NOTIFICATION_WEATHER);
         CheckBoxPreference cbImages = (CheckBoxPreference) findPreference(SETTINGS_IMAGES);
         CheckBoxPreference cbJsScript = (CheckBoxPreference) findPreference(SETTINGS_JAVASCRIPT);
-
         proxy.setOnPreferenceClickListener(this);
         useragent.setOnPreferenceClickListener(this);
         downloadloc.setOnPreferenceClickListener(this);
@@ -85,6 +108,8 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         searchengine.setOnPreferenceClickListener(this);
         cbFlash.setOnPreferenceChangeListener(this);
         cbAds.setOnPreferenceChangeListener(this);
+        cbSearchBar.setOnPreferenceChangeListener(this);
+        cbWeatherBar.setOnPreferenceChangeListener(this);
         cbImages.setOnPreferenceChangeListener(this);
         cbJsScript.setOnPreferenceChangeListener(this);
 
@@ -152,11 +177,21 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         boolean imagesBool = mPreferenceManager.getBlockImagesEnabled();
         boolean enableJSBool = mPreferenceManager.getJavaScriptEnabled();
 
-        cbAds.setEnabled(BuildConfig.FULL_VERSION);
+        cbAds.setEnabled(true);
 
-        if (!BuildConfig.FULL_VERSION) {
-            cbAds.setSummary(R.string.upsell_plus_version);
+        cbSearchBar.setEnabled(true);
+        cbSearchBar.setChecked(mPreferenceManager.getNotificationSearchBarEnabled());
+        if (BrowserApp.getConfig().isWeatherWidgetEnabled()) {
+            cbWeatherBar.setEnabled(true);
+            cbWeatherBar.setChecked(mPreferenceManager.getNotificationWeatherEnabled());
+        } else {
+            PreferenceCategory preferenceCategory = (PreferenceCategory) getPreferenceScreen().findPreference("general_settings");
+            preferenceCategory.removePreference(cbWeatherBar);
         }
+
+        /*if (!BuildConfig.FULL_VERSION) {
+            cbAds.setSummary(R.string.upsell_plus_version);
+        }*/
 
         if (API < Build.VERSION_CODES.KITKAT) {
             cbFlash.setEnabled(true);
@@ -174,17 +209,17 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
     private void searchUrlPicker() {
 
         BrowserDialog.showEditText(mActivity,
-            R.string.custom_url,
-            R.string.custom_url,
-            mPreferenceManager.getSearchUrl(),
-            R.string.action_ok,
-            new BrowserDialog.EditorListener() {
-                @Override
-                public void onClick(String text) {
-                    mPreferenceManager.setSearchUrl(text);
-                    searchengine.setSummary(mActivity.getString(R.string.custom_url) + ": " + text);
-                }
-            });
+                R.string.custom_url,
+                R.string.custom_url,
+                mPreferenceManager.getSearchUrl(),
+                R.string.action_ok,
+                new BrowserDialog.EditorListener() {
+                    @Override
+                    public void onClick(String text) {
+                        mPreferenceManager.setSearchUrl(text);
+                        searchengine.setSummary(mActivity.getString(R.string.custom_url) + ": " + text);
+                    }
+                });
 
     }
 
@@ -192,22 +227,22 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         AlertDialog.Builder builder = new AlertDialog.Builder(mActivity);
         builder.setTitle(mActivity.getResources().getString(R.string.title_flash));
         builder.setMessage(getResources().getString(R.string.flash))
-            .setCancelable(true)
-            .setPositiveButton(getResources().getString(R.string.action_manual),
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        mPreferenceManager.setFlashSupport(1);
-                    }
-                })
-            .setNegativeButton(getResources().getString(R.string.action_auto),
-                new DialogInterface.OnClickListener() {
+                .setCancelable(true)
+                .setPositiveButton(getResources().getString(R.string.action_manual),
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                mPreferenceManager.setFlashSupport(1);
+                            }
+                        })
+                .setNegativeButton(getResources().getString(R.string.action_auto),
+                        new DialogInterface.OnClickListener() {
 
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        mPreferenceManager.setFlashSupport(2);
-                    }
-                }).setOnCancelListener(new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                mPreferenceManager.setFlashSupport(2);
+                            }
+                        }).setOnCancelListener(new DialogInterface.OnCancelListener() {
 
             @Override
             public void onCancel(DialogInterface dialog) {
@@ -224,13 +259,13 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         AlertDialog.Builder picker = new AlertDialog.Builder(mActivity);
         picker.setTitle(R.string.http_proxy);
         picker.setSingleChoiceItems(mProxyChoices, mPreferenceManager.getProxyChoice(),
-            new DialogInterface.OnClickListener() {
+                new DialogInterface.OnClickListener() {
 
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    setProxyChoice(which);
-                }
-            });
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        setProxyChoice(which);
+                    }
+                });
         picker.setPositiveButton(R.string.action_ok, null);
         Dialog dialog = picker.show();
         BrowserDialog.setDialogSize(mActivity, dialog);
@@ -273,25 +308,25 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         eProxyPort.setText(Integer.toString(mPreferenceManager.getProxyPort()));
 
         Dialog dialog = new AlertDialog.Builder(mActivity)
-            .setTitle(R.string.manual_proxy)
-            .setView(v)
-            .setPositiveButton(R.string.action_ok, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    String proxyHost = eProxyHost.getText().toString();
-                    int proxyPort;
-                    try {
-                        // Try/Catch in case the user types an empty string or a number
-                        // larger than max integer
-                        proxyPort = Integer.parseInt(eProxyPort.getText().toString());
-                    } catch (NumberFormatException ignored) {
-                        proxyPort = mPreferenceManager.getProxyPort();
+                .setTitle(R.string.manual_proxy)
+                .setView(v)
+                .setPositiveButton(R.string.action_ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        String proxyHost = eProxyHost.getText().toString();
+                        int proxyPort;
+                        try {
+                            // Try/Catch in case the user types an empty string or a number
+                            // larger than max integer
+                            proxyPort = Integer.parseInt(eProxyPort.getText().toString());
+                        } catch (NumberFormatException ignored) {
+                            proxyPort = mPreferenceManager.getProxyPort();
+                        }
+                        mPreferenceManager.setProxyHost(proxyHost);
+                        mPreferenceManager.setProxyPort(proxyPort);
+                        proxy.setSummary(proxyHost + ':' + proxyPort);
                     }
-                    mPreferenceManager.setProxyHost(proxyHost);
-                    mPreferenceManager.setProxyPort(proxyPort);
-                    proxy.setSummary(proxyHost + ':' + proxyPort);
-                }
-            }).show();
+                }).show();
         BrowserDialog.setDialogSize(mActivity, dialog);
     }
 
@@ -299,9 +334,9 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         AlertDialog.Builder picker = new AlertDialog.Builder(mActivity);
         picker.setTitle(getResources().getString(R.string.title_search_engine));
         CharSequence[] chars = {getResources().getString(R.string.custom_url), "Google",
-            "Ask", "Bing", "Yahoo", "StartPage", "StartPage (Mobile)",
-            "DuckDuckGo (Privacy)", "DuckDuckGo Lite (Privacy)", "Baidu (Chinese)",
-            "Yandex (Russian)"};
+                "Ask", "Bing", "Yahoo", "StartPage", "StartPage (Mobile)",
+                "DuckDuckGo (Privacy)", "DuckDuckGo Lite (Privacy)", "Baidu (Chinese)",
+                "Yandex (Russian)"};
 
         int n = mPreferenceManager.getSearchChoice();
 
@@ -310,6 +345,7 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 mPreferenceManager.setSearchChoice(which);
+                mPreferenceManager.setSearchEngineApplied(true);
                 setSearchEngineSummary(which);
             }
         });
@@ -339,28 +375,28 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         }
 
         picker.setSingleChoiceItems(R.array.homepage, n,
-            new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    switch (which) {
-                        case 0:
-                            mPreferenceManager.setHomepage(Constants.SCHEME_HOMEPAGE);
-                            home.setSummary(getResources().getString(R.string.action_homepage));
-                            break;
-                        case 1:
-                            mPreferenceManager.setHomepage(Constants.SCHEME_BLANK);
-                            home.setSummary(getResources().getString(R.string.action_blank));
-                            break;
-                        case 2:
-                            mPreferenceManager.setHomepage(Constants.SCHEME_BOOKMARKS);
-                            home.setSummary(getResources().getString(R.string.action_bookmarks));
-                            break;
-                        case 3:
-                            homePicker();
-                            break;
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which) {
+                            case 0:
+                                mPreferenceManager.setHomepage(Constants.SCHEME_HOMEPAGE);
+                                home.setSummary(getResources().getString(R.string.action_homepage));
+                                break;
+                            case 1:
+                                mPreferenceManager.setHomepage(Constants.SCHEME_BLANK);
+                                home.setSummary(getResources().getString(R.string.action_blank));
+                                break;
+                            case 2:
+                                mPreferenceManager.setHomepage(Constants.SCHEME_BOOKMARKS);
+                                home.setSummary(getResources().getString(R.string.action_bookmarks));
+                                break;
+                            case 3:
+                                homePicker();
+                                break;
+                        }
                     }
-                }
-            });
+                });
         picker.setPositiveButton(getResources().getString(R.string.action_ok), null);
         Dialog dialog = picker.show();
         BrowserDialog.setDialogSize(mActivity, dialog);
@@ -388,29 +424,29 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         }
 
         picker.setSingleChoiceItems(R.array.suggestions, currentChoice,
-            new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    switch (which) {
-                        case 0:
-                            mPreferenceManager.setSearchSuggestionChoice(Suggestion.SUGGESTION_GOOGLE);
-                            searchsSuggestions.setSummary(R.string.powered_by_google);
-                            break;
-                        case 1:
-                            mPreferenceManager.setSearchSuggestionChoice(Suggestion.SUGGESTION_DUCK);
-                            searchsSuggestions.setSummary(R.string.powered_by_duck);
-                            break;
-                        case 2:
-                            mPreferenceManager.setSearchSuggestionChoice(Suggestion.SUGGESTION_BAIDU);
-                            searchsSuggestions.setSummary(R.string.powered_by_baidu);
-                            break;
-                        case 3:
-                            mPreferenceManager.setSearchSuggestionChoice(Suggestion.SUGGESTION_NONE);
-                            searchsSuggestions.setSummary(R.string.search_suggestions_off);
-                            break;
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which) {
+                            case 0:
+                                mPreferenceManager.setSearchSuggestionChoice(Suggestion.SUGGESTION_GOOGLE);
+                                searchsSuggestions.setSummary(R.string.powered_by_google);
+                                break;
+                            case 1:
+                                mPreferenceManager.setSearchSuggestionChoice(Suggestion.SUGGESTION_DUCK);
+                                searchsSuggestions.setSummary(R.string.powered_by_duck);
+                                break;
+                            case 2:
+                                mPreferenceManager.setSearchSuggestionChoice(Suggestion.SUGGESTION_BAIDU);
+                                searchsSuggestions.setSummary(R.string.powered_by_baidu);
+                                break;
+                            case 3:
+                                mPreferenceManager.setSearchSuggestionChoice(Suggestion.SUGGESTION_NONE);
+                                searchsSuggestions.setSummary(R.string.search_suggestions_off);
+                                break;
+                        }
                     }
-                }
-            });
+                });
         picker.setPositiveButton(getResources().getString(R.string.action_ok), null);
         Dialog dialog = picker.show();
         BrowserDialog.setDialogSize(mActivity, dialog);
@@ -426,17 +462,17 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         }
 
         BrowserDialog.showEditText(mActivity,
-            R.string.title_custom_homepage,
-            R.string.title_custom_homepage,
-            currentHomepage,
-            R.string.action_ok,
-            new BrowserDialog.EditorListener() {
-                @Override
-                public void onClick(String text) {
-                    mPreferenceManager.setHomepage(text);
-                    home.setSummary(text);
-                }
-            });
+                R.string.title_custom_homepage,
+                R.string.title_custom_homepage,
+                currentHomepage,
+                R.string.action_ok,
+                new BrowserDialog.EditorListener() {
+                    @Override
+                    public void onClick(String text) {
+                        mPreferenceManager.setHomepage(text);
+                        home.setSummary(text);
+                    }
+                });
     }
 
     private void downloadLocDialog() {
@@ -451,20 +487,20 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         }
 
         picker.setSingleChoiceItems(R.array.download_folder, n,
-            new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    switch (which) {
-                        case 0:
-                            mPreferenceManager.setDownloadDirectory(DownloadHandler.DEFAULT_DOWNLOAD_PATH);
-                            downloadloc.setSummary(DownloadHandler.DEFAULT_DOWNLOAD_PATH);
-                            break;
-                        case 1:
-                            downPicker();
-                            break;
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which) {
+                            case 0:
+                                mPreferenceManager.setDownloadDirectory(DownloadHandler.DEFAULT_DOWNLOAD_PATH);
+                                downloadloc.setSummary(DownloadHandler.DEFAULT_DOWNLOAD_PATH);
+                                break;
+                            case 1:
+                                downPicker();
+                                break;
+                        }
                     }
-                }
-            });
+                });
         picker.setPositiveButton(getResources().getString(R.string.action_ok), null);
         Dialog dialog = picker.show();
         BrowserDialog.setDialogSize(mActivity, dialog);
@@ -475,27 +511,27 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         agentPicker.setTitle(getResources().getString(R.string.title_user_agent));
         mAgentChoice = mPreferenceManager.getUserAgentChoice();
         agentPicker.setSingleChoiceItems(R.array.user_agent, mAgentChoice - 1,
-            new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    mPreferenceManager.setUserAgentChoice(which + 1);
-                    switch (which) {
-                        case 0:
-                            useragent.setSummary(getResources().getString(R.string.agent_default));
-                            break;
-                        case 1:
-                            useragent.setSummary(getResources().getString(R.string.agent_desktop));
-                            break;
-                        case 2:
-                            useragent.setSummary(getResources().getString(R.string.agent_mobile));
-                            break;
-                        case 3:
-                            useragent.setSummary(getResources().getString(R.string.agent_custom));
-                            agentPicker();
-                            break;
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mPreferenceManager.setUserAgentChoice(which + 1);
+                        switch (which) {
+                            case 0:
+                                useragent.setSummary(getResources().getString(R.string.agent_default));
+                                break;
+                            case 1:
+                                useragent.setSummary(getResources().getString(R.string.agent_desktop));
+                                break;
+                            case 2:
+                                useragent.setSummary(getResources().getString(R.string.agent_mobile));
+                                break;
+                            case 3:
+                                useragent.setSummary(getResources().getString(R.string.agent_custom));
+                                agentPicker();
+                                break;
+                        }
                     }
-                }
-            });
+                });
         agentPicker.setPositiveButton(getResources().getString(R.string.action_ok), null);
         Dialog dialog = agentPicker.show();
         BrowserDialog.setDialogSize(mActivity, dialog);
@@ -504,17 +540,17 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
     private void agentPicker() {
 
         BrowserDialog.showEditText(mActivity,
-            R.string.title_user_agent,
-            R.string.title_user_agent,
-            mPreferenceManager.getUserAgentString(""),
-            R.string.action_ok,
-            new BrowserDialog.EditorListener() {
-                @Override
-                public void onClick(String text) {
-                    mPreferenceManager.setUserAgentString(text);
-                    useragent.setSummary(mActivity.getString(R.string.agent_custom));
-                }
-            });
+                R.string.title_user_agent,
+                R.string.title_user_agent,
+                mPreferenceManager.getUserAgentString(""),
+                R.string.action_ok,
+                new BrowserDialog.EditorListener() {
+                    @Override
+                    public void onClick(String text) {
+                        mPreferenceManager.setUserAgentString(text);
+                        useragent.setSummary(mActivity.getString(R.string.agent_custom));
+                    }
+                });
     }
 
     private void downPicker() {
@@ -529,18 +565,18 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         getDownload.setText(mPreferenceManager.getDownloadDirectory());
 
         AlertDialog.Builder downLocationPicker = new AlertDialog.Builder(mActivity)
-            .setTitle(R.string.title_download_location)
-            .setView(dialogView)
-            .setPositiveButton(R.string.action_ok,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String text = getDownload.getText().toString();
-                        text = DownloadHandler.addNecessarySlashes(text);
-                        mPreferenceManager.setDownloadDirectory(text);
-                        downloadloc.setSummary(text);
-                    }
-                });
+                .setTitle(R.string.title_download_location)
+                .setView(dialogView)
+                .setPositiveButton(R.string.action_ok,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                String text = getDownload.getText().toString();
+                                text = DownloadHandler.addNecessarySlashes(text);
+                                mPreferenceManager.setDownloadDirectory(text);
+                                downloadloc.setSummary(text);
+                            }
+                        });
         Dialog dialog = downLocationPicker.show();
         BrowserDialog.setDialogSize(mActivity, dialog);
     }
@@ -598,7 +634,65 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
                 homepageDialog();
                 return true;
             case SETTINGS_SEARCHENGINE:
-                searchDialog();
+                if (mPreferenceManager.getRewardedVideoOnChangeTheme()) {
+                    final FastTrackBaseAdapter.RewardedVideoListener listenerReadingMode = new FastTrackBaseAdapter.RewardedVideoListener() {
+                        boolean isVideoFinished;
+
+                        @Override
+                        public void onVideoOpened() {
+
+                        }
+
+                        @Override
+                        public void onVideoClicked() {
+
+                        }
+
+                        @Override
+                        public void onVideoClosed() {
+                            if (isVideoFinished) {
+                                searchDialog();
+                            }
+                        }
+
+                        @Override
+                        public void onVideoError(String s) {
+                            searchDialog();
+                        }
+
+                        @Override
+                        public void onVideoFinished() {
+                            isVideoFinished = true;
+                        }
+                    };
+
+
+                    AlertDialog.Builder rewardedVideoToShowBookmark = new AlertDialog.Builder(mActivity);
+                    rewardedVideoToShowBookmark.setTitle(getResources().getString(R.string.to_applay_change_watch_video));
+                    rewardedVideoToShowBookmark.setPositiveButton(getResources().getString(R.string.action_ok), new DialogInterface.OnClickListener() {
+
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            AppsgeyserSDK.getFastTrackAdsController().showRewardedVideo(listenerReadingMode);
+                        }
+                    });
+                    rewardedVideoToShowBookmark.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            mActivity.onBackPressed();
+                        }
+                    });
+
+                    rewardedVideoToShowBookmark.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                            mActivity.onBackPressed();
+                        }
+                    });
+                    rewardedVideoToShowBookmark.show();
+                } else {
+                    searchDialog();
+                }
                 return true;
             case SETTINGS_SUGGESTIONS:
                 suggestionsDialog();
@@ -637,13 +731,31 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
             case SETTINGS_JAVASCRIPT:
                 mPreferenceManager.setJavaScriptEnabled(checked);
                 return true;
+            case SETTINGS_NOTIFICATION_SEARCH_BAR:
+                mPreferenceManager.setNotificationSearchEnabled(checked);
+                if (checked) {
+                    createSearchBarNotice();
+                } else {
+                    deleteSearchBarNotice();
+                }
+                return true;
+            case SETTINGS_NOTIFICATION_WEATHER:
+                mPreferenceManager.setNotificationWeatherEnabled(checked);
+                WeatherNotification weatherNotification = new WeatherNotification(getActivity(), mPreferenceManager.getWeatherData(), mPreferenceManager);
+                if (checked) {
+                    weatherNotification.show();
+                } else {
+                    weatherNotification.remove();
+                }
+                return true;
             default:
                 return false;
         }
     }
 
     private static class DownloadLocationTextWatcher implements TextWatcher {
-        @NonNull private final EditText getDownload;
+        @NonNull
+        private final EditText getDownload;
         private final int errorColor;
         private final int regularColor;
 
@@ -654,10 +766,12 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
         }
 
         @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
 
         @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {}
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+        }
 
         @Override
         public void afterTextChanged(@NonNull Editable s) {
@@ -667,5 +781,30 @@ public class GeneralSettingsFragment extends LightningPreferenceFragment impleme
                 this.getDownload.setTextColor(this.regularColor);
             }
         }
+    }
+
+    public void createSearchBarNotice() {
+        final RemoteViews remoteViews = new RemoteViews(getActivity().getPackageName(), R.layout.notification_search_bar);
+        final NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(getActivity())
+                        .setSmallIcon(R.drawable.ic_search_white_24dp)
+                        .setContent(remoteViews).setOngoing(true);
+
+        final Intent resultIntent = new Intent(getActivity().getApplicationContext(), MainActivity.class);
+        resultIntent.putExtra("focus", true);
+        final TaskStackBuilder stackBuilder = TaskStackBuilder.create(getActivity().getApplicationContext());
+        stackBuilder.addParentStack(MainActivity.class);
+        stackBuilder.addNextIntent(resultIntent);
+        final PendingIntent pIntent = PendingIntent.getActivity(getActivity().getApplicationContext(), (int) System.currentTimeMillis(), resultIntent, 0);
+        mBuilder.setContentIntent(pIntent);
+        final NotificationManager mNotificationManager =
+                (NotificationManager) getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(SEARCH_BAR_NOTIFICATION_ID, mBuilder.build());
+    }
+
+    public void deleteSearchBarNotice() {
+        final NotificationManager mNotificationManager =
+                (NotificationManager) getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.cancel(SEARCH_BAR_NOTIFICATION_ID);
     }
 }

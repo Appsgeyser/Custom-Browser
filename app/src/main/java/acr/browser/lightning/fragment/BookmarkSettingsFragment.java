@@ -63,7 +63,8 @@ public class BookmarkSettingsFragment extends PreferenceFragment implements Pref
 
     @Nullable private Activity mActivity;
 
-    @Inject BookmarkModel mBookmarkManager;
+    @Inject
+    BookmarkModel mBookmarkManager;
     @Inject Application mApplication;
 
     private File[] mFileList;

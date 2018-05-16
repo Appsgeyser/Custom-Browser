@@ -25,10 +25,11 @@
 
             <include layout="@layout/search_interface" />
 
-            <com.appsgeyser.sdk.ads.AdView
+            <RelativeLayout
                 android:id="@+id/adView"
                 android:layout_width="match_parent"
-                android:layout_height="50dp" />
+                android:layout_height="wrap_content"
+                android:gravity="center" />
         </LinearLayout>
 
 

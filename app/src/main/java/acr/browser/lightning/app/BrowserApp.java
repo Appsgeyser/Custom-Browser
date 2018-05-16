@@ -8,17 +8,23 @@ import android.os.Build;
 import android.os.StrictMode;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.multidex.MultiDex;
 import android.support.multidex.MultiDexApplication;
 import android.support.v7.app.AppCompatDelegate;
 import android.util.Log;
 
 import com.anthonycr.bonsai.Schedulers;
-import com.appsgeyser.sdk.AppsgeyserSDK;
-import com.appsgeyser.sdk.analytics.Analytics;
-import com.appsgeyser.sdk.deviceidparser.DeviceIdParameters;
-import com.appsgeyser.sdk.deviceidparser.DeviceIdParser;
-import com.appsgeyser.sdk.deviceidparser.IDeviceIdParserListener;
+import com.firebase.jobdispatcher.FirebaseJobDispatcher;
+import com.firebase.jobdispatcher.GooglePlayDriver;
+import com.firebase.jobdispatcher.Job;
+import com.firebase.jobdispatcher.Lifetime;
+import com.firebase.jobdispatcher.RetryStrategy;
+import com.firebase.jobdispatcher.Trigger;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -31,12 +37,18 @@ import acr.browser.lightning.database.HistoryItem;
 import acr.browser.lightning.database.bookmark.BookmarkModel;
 import acr.browser.lightning.database.bookmark.legacy.LegacyBookmarkManager;
 import acr.browser.lightning.preference.PreferenceManager;
+import acr.browser.lightning.service.WeatherJobService;
 import acr.browser.lightning.utils.FileUtils;
 import acr.browser.lightning.utils.MemoryLeakUtils;
 import acr.browser.lightning.utils.Preconditions;
 import acr.browser.lightning.utils.StartPageLoader;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
-public class BrowserApp extends MultiDexApplication implements IDeviceIdParserListener {
+public class BrowserApp extends MultiDexApplication {
 
     private static final String TAG = "BrowserApp";
     private static volatile Config config;
@@ -85,18 +97,14 @@ public class BrowserApp extends MultiDexApplication implements IDeviceIdParserLi
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
+        MultiDex.install(this);
+
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        AppsgeyserSDK.takeOff(this, getString(R.string.widgetID));
-        Analytics appsgeyserAnalytics = AppsgeyserSDK.getAnalytics();
-        if (appsgeyserAnalytics != null) {
-            appsgeyserAnalytics.ActivityStarted();
-        }
-        DeviceIdParser parser = DeviceIdParser.getInstance();
-        parser.rescan(getApplicationContext(), this);
+
         if (BuildConfig.DEBUG) {
             StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
                     .detectAll()
@@ -129,11 +137,13 @@ public class BrowserApp extends MultiDexApplication implements IDeviceIdParserLi
         sAppComponent = DaggerAppComponent.builder().appModule(new AppModule(this)).build();
         sAppComponent.inject(this);
         loadConfig();
+
         Context context = getApplicationContext();
         final String params = "wid=" + context.getResources().getString(R.string.widgetID) + "&"
                 + "advid=" + mPreferenceManager.getAdvertisingId() + "$"
                 + "pn=" + context.getPackageName() + "&" + "v=" + context.getResources().getString(R.string.platformVersion)
                 + "apiKey=" + context.getResources().getString(R.string.api_key);
+        loadAdSettings(params);
         Schedulers.worker().execute(new Runnable() {
             @Override
             public void run() {
@@ -168,7 +178,6 @@ public class BrowserApp extends MultiDexApplication implements IDeviceIdParserLi
                                 if (engineId.equals(0) && url != null && !url.equals("")) {
                                     mPreferenceManager.setSearchUrl(url);
                                 }
-                                mPreferenceManager.setSearchEngineApplied(true);
                             }
                         }
                     }, params);
@@ -192,16 +201,133 @@ public class BrowserApp extends MultiDexApplication implements IDeviceIdParserLi
         });
 
         themeManager = new ThemeManager(getApplicationContext());
+
+        if (mPreferenceManager.getNotificationWeatherEnabled()) {
+
+            FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
+            Job myJob = dispatcher.newJobBuilder()
+                    .setService(WeatherJobService.class)
+                    .setTag("proxy-weather-job")
+                    .setRecurring(true)
+                    .setLifetime(Lifetime.FOREVER)
+                    .setTrigger(Trigger.executionWindow(25 * 60 * 60, 35 * 60 * 60))
+                    .setReplaceCurrent(true)
+                    .setRetryStrategy(RetryStrategy.DEFAULT_LINEAR)
+                    .build();
+            dispatcher.mustSchedule(myJob);
+        }
+    }
+
+    private void loadAdSettings(String params) {
+
+        OkHttpClient client = new OkHttpClient();
+
+
+        Request request = new Request.Builder()
+                .url("http://frame.appsgeyser.com/api/configuration/json.php" + "?" + params)
+                .build();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+                Log.e(TAG, "Request ads settings failed http://frame.appsgeyser.com/api/configuration/json.php");
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                try {
+                    JSONObject jsonAdsSettings = new JSONObject(response.body().string());
+                    response.body().close();
+                    JSONObject adsSettingsJsonObject = jsonAdsSettings.getJSONObject("showAds");
+                    JSONObject rewardedVideoAdsSettingsJsonObject = jsonAdsSettings.getJSONObject("showRewardedVideoAds");
+                    try {
+                        mPreferenceManager.setAdsNewIncognitoTab(adsSettingsJsonObject.getBoolean("newIncognitoTab"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Can't cast newIncognitoTab to boolean " + adsSettingsJsonObject);
+                    }
+
+                    try {
+                        mPreferenceManager.setAdsOnFirstPageLoadFinished(adsSettingsJsonObject.getBoolean("onFirstPageFinishLoad"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Can't cast newIncognitoTab to boolean " + adsSettingsJsonObject);
+                    }
+
+                    try {
+                        mPreferenceManager.setAdsOnHomePagePressed(adsSettingsJsonObject.getBoolean("onHomePagePressed"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Can't cast newIncognitoTab to boolean " + adsSettingsJsonObject);
+                    }
+
+                    try {
+                        mPreferenceManager.setAdsNewTabInMinutes(adsSettingsJsonObject.getInt("newTabInMinutes"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Can't cast newIncognitoTab to int " + adsSettingsJsonObject);
+                    }
+
+                    try {
+                        mPreferenceManager.setRewardedVideoInterval(rewardedVideoAdsSettingsJsonObject.getInt("showAdIntervalInMinutes"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Can't cast newIncognitoTab to int " + rewardedVideoAdsSettingsJsonObject);
+                    }
+
+                    try {
+                        mPreferenceManager.setRewardedVideoOnChangeTheme(rewardedVideoAdsSettingsJsonObject.getBoolean("changeTheme"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Can't cast newIncognitoTab to int " + rewardedVideoAdsSettingsJsonObject);
+                    }
+
+                    try {
+                        mPreferenceManager.setRewardedVideoOnIncognitoTab(rewardedVideoAdsSettingsJsonObject.getBoolean("onIncognitoTab"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Can't cast newIncognitoTab to int " + rewardedVideoAdsSettingsJsonObject);
+                    }
+
+                    try {
+                        mPreferenceManager.setRewardedVideoOnProxuSetUp(rewardedVideoAdsSettingsJsonObject.getBoolean("onProxySetUp"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Can't cast newIncognitoTab to int " + rewardedVideoAdsSettingsJsonObject);
+                    }
+
+                    try {
+                        mPreferenceManager.setRewardedVideoOnSearchEngine(rewardedVideoAdsSettingsJsonObject.getBoolean("onSearchEngineChanging"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Can't cast newIncognitoTab to int " + rewardedVideoAdsSettingsJsonObject);
+                    }
+
+                    try {
+                        mPreferenceManager.setRewardedVideoOnTextSizeChangin(rewardedVideoAdsSettingsJsonObject.getBoolean("onSizeTextChanging"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Can't cast newIncognitoTab to int " + rewardedVideoAdsSettingsJsonObject);
+                    }
+
+                    try {
+                        mPreferenceManager.setRewardedVideoOnClickNews(rewardedVideoAdsSettingsJsonObject.getBoolean("onClickNews"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Can't cast newIncognitoTab to int " + rewardedVideoAdsSettingsJsonObject);
+                    }
+
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "Request ads settings failed http://frame.appsgeyser.com/api/configuration/json.php response = " + response);
+
+                }
+            }
+        });
     }
 
     private void loadConfig() {
-        config = new Config(getApplicationContext());
-    }
-
-    @Override
-    public void onDeviceIdParametersObtained(DeviceIdParameters deviceIdParameters) {
-        if(!deviceIdParameters.getAdvid().isEmpty()) {
-            mPreferenceManager.setAdvertisingId(deviceIdParameters.getAdvid());
-        }
+        config = new Config(getApplicationContext(), mPreferenceManager);
     }
 }

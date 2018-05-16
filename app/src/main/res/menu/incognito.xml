@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <item
+        android:id="@+id/action_market"
+        android:title="@string/action_market"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_menu_offer_wall"/>
+    <item
+        android:id="@+id/action_app_theme"
+        android:title="@string/theme"/>
     <item
         android:id="@+id/action_new_tab"
         android:title="@string/action_new_tab"/>

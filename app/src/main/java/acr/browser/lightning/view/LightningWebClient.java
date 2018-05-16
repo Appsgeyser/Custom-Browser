@@ -16,6 +16,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,6 +33,8 @@ import android.widget.TextView;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +64,8 @@ public class LightningWebClient extends WebViewClient {
     @NonNull private final UIController mUIController;
     @NonNull private final IntentUtils mIntentUtils;
 
-    @Inject ProxyUtils mProxyUtils;
+    @Inject
+    ProxyUtils mProxyUtils;
     @Inject AdBlock mAdBlock;
 
     LightningWebClient(@NonNull Activity activity, @NonNull LightningView lightningView) {
@@ -100,6 +104,7 @@ public class LightningWebClient extends WebViewClient {
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public void onPageFinished(@NonNull WebView view, String url) {
+        mUIController.onPageLoadFinish();
         mUIController.updateUrl(url, true);
         mUIController.setBackButtonEnabled(view.canGoBack());
         mUIController.setForwardButtonEnabled(view.canGoForward());
@@ -115,6 +120,32 @@ public class LightningWebClient extends WebViewClient {
         }
         mUIController.tabChanged(mLightningView);
         mLightningView.setRefreshing(false);
+
+        injectScriptFile(view, "js/script.js"); // see below ...
+    }
+
+    private void injectScriptFile(WebView view, String scriptFile) {
+        InputStream input;
+        try {
+            input = mActivity.getAssets().open(scriptFile);
+            byte[] buffer = new byte[input.available()];
+            input.read(buffer);
+            input.close();
+
+            // String-ify the script byte-array using BASE64 encoding !!!
+            String encoded = Base64.encodeToString(buffer, Base64.NO_WRAP);
+            view.loadUrl("javascript:(function() {" +
+                    "var parent = document.getElementsByTagName('head').item(0);" +
+                    "var script = document.createElement('script');" +
+                    "script.type = 'text/javascript';" +
+                    // Tell the browser to BASE64-decode the string into your script !!!
+                    "script.innerHTML = window.atob('" + encoded + "');" +
+                    "parent.appendChild(script)" +
+                    "})()");
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     @Override

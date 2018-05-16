@@ -12,7 +12,6 @@ import javax.inject.Inject;
 import acr.browser.lightning.R;
 import acr.browser.lightning.app.BrowserApp;
 import acr.browser.lightning.preference.PreferenceManager;
-import acr.browser.lightning.utils.ThemeUtils;
 
 public abstract class ThemableBrowserActivity extends AppCompatActivity {
 

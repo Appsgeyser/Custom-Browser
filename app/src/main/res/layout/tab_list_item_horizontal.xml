@@ -20,7 +20,7 @@
         android:layout_marginLeft="7dp"
         android:layout_marginRight="7dp"
         android:contentDescription="Favicon"
-        android:gravity="center_vertical"/>
+        android:gravity="center_vertical" />
 
     <TextView
         android:id="@+id/textTab"
@@ -33,7 +33,7 @@
         android:maxLines="1"
         android:minHeight="?android:attr/listPreferredItemHeightSmall"
         android:singleLine="true"
-        android:textAppearance="?android:attr/textAppearanceSmall"/>
+        android:textAppearance="?android:attr/textAppearanceSmall" />
 
     <FrameLayout
         android:id="@+id/deleteAction"

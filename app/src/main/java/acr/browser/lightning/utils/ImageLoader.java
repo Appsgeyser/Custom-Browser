@@ -5,7 +5,6 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.util.LruCache;
-import android.widget.ImageView;
 
 import java.io.InputStream;
 

@@ -33,9 +33,11 @@ public class LightningDownloadListener implements DownloadListener {
 
     private final Activity mActivity;
 
-    @Inject PreferenceManager mPreferenceManager;
+    @Inject
+    PreferenceManager mPreferenceManager;
 
-    @Inject DownloadsModel downloadsModel;
+    @Inject
+    DownloadsModel downloadsModel;
 
     public LightningDownloadListener(Activity context) {
         BrowserApp.getAppComponent().inject(this);

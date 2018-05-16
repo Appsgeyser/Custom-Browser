@@ -1,64 +1,91 @@
 {
   "browserLinks": [
     {
-      "title": "Google",
-      "url": "https:\/\/www.google.ru\/",
+      "title": "dfg",
+      "url": "http:\/\/www.appsgeyser.com\/create-browser-app\/?ref=l",
       "icon": ""
     },
     {
-      "title": "Amazon",
-      "url": "https:\/\/www.amazon.com\/",
+      "title": "http:\/\/www.appsgeyser.com\/create-browser-app\/?ref=l",
+      "url": "http:\/\/www.appsgeyser.com\/create-browser-app\/?ref=l",
       "icon": ""
     },
     {
-      "title": "Reddit",
-      "url": "https:\/\/www.reddit.com\/",
+      "title": "http:\/\/www.appsgeyser.com\/create-browser-app\/?ref=l",
+      "url": "http:\/\/www.appsgeyser.com\/create-browser-app\/?ref=l",
       "icon": ""
     },
     {
-      "title": "Vimeo",
-      "url": "https:\/\/vimeo.com\/",
+      "title": "http:\/\/www.appsgeyser.com\/create-browser-app\/?ref=l",
+      "url": "http:\/\/www.appsgeyser.com\/create-browser-app\/?ref=l",
       "icon": ""
     },
     {
-      "title": "Coub",
-      "url": "http:\/\/coub.com\/",
+      "title": "http:\/\/www.appsgeyser.com\/create-browser-app\/?ref=l",
+      "url": "http:\/\/www.appsgeyser.com\/create-browser-app\/?ref=l",
       "icon": ""
     },
     {
-      "title": "Facebook",
-      "url": "https:\/\/www.facebook.com\/",
-      "icon": ""
-    },
-    {
-      "title": "Twitter",
-      "url": "https:\/\/twitter.com\/",
-      "icon": ""
-    },
-    {
-      "title": "Pinterest",
-      "url": "https:\/\/pinterest.com\/",
-      "icon": ""
-    },
-    {
-      "title": "Tumblr",
-      "url": "http:\/\/www.tumblr.com\/",
-      "icon": ""
-    },
-    {
-      "title": "Linkedin",
-      "url": "https:\/\/www.linkedin.com\/",
+      "title": "http:\/\/www.appsgeyser.com\/create-browser-app\/?ref=l",
+      "url": "http:\/\/www.appsgeyser.com\/create-browser-app\/?ref=l",
       "icon": ""
     }
   ],
+  "backgroundImage": "uploaded_data\/crop5a1f799d5c238.jpg",
+  "homepageTabs": {
+    "homepageTabs": "widgets",
+    "widgetsMargins": true,
+    "widgets": {
+      "downloadsWidget": {
+        "downloadsWidgetType": "downloadsList",
+        "downloadsWidgetColor": "#ff5722",
+        "downloadsWidgetEnabled": false,
+        "sortPosition": 0
+      },
+      "bookmarkWidget": {
+        "bookmarkWidgetType": "bookmarkList2Columns",
+        "bookmarkWidgetColor": "#3f51b5",
+        "bookmarkWidgetEnabled": false,
+        "sortPosition": 1
+      },
+      "newsWidget": {
+        "newsWidgetType": "newsList",
+        "newsWidgetColor": "#fdd835",
+        "newsTabsPosition": "withBar",
+        "sortPosition": 2
+      },
+      "historyWidget": {
+        "historyWidgetType": "historyList",
+        "historyWidgetColor": "#2196f3",
+        "historyWidgetEnabled": true,
+        "sortPosition": 3
+      },
+      "weatherWidget": {
+        "weatherWidgetType": "weatherFlat",
+        "weatherWidgetColor": "#4caf50",
+        "weatherWidgetEnabled": true,
+        "sortPosition": 4
+      }
+    },
+    "homePageUrl": "",
+    "startPageUrl": ""
+  },
+  "viewSettings": {
+    "toolBarStyle": "rounded",
+    "toolbarPosition": "bottom",
+    "tabsInNavigationDrawer": false,
+    "swapDrawers": "false",
+    "hidedStatusBar": false,
+    "fullScreenMode": false,
+    "searchBarNotificationEnabled": false,
+    "weatherNotificationEnabled": true
+  },
   "name": "browser",
-  "template": "browserV3",
+  "template": "browserV5",
   "icon": "uploaded_data\/icon.png",
-  "backgroundImage": "uploaded_data\/background.jpg",
-
   "themeColors": {
-    "colorPrimary": "#009688",
-    "colorPrimaryDark": "#004d40",
-    "colorAccent": "#00bfa5"
+    "colorPrimary": "#2196f3",
+    "colorPrimaryDark": "#1976D2",
+    "colorAccent": "#448aff"
   }
 }

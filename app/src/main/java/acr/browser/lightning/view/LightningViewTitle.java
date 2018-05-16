@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 
 import acr.browser.lightning.R;
 import acr.browser.lightning.app.BrowserApp;
-import acr.browser.lightning.utils.ThemeUtils;
 import acr.browser.lightning.utils.Utils;
 
 /**

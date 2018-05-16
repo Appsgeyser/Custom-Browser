@@ -2,6 +2,9 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory android:title="@string/settings_display">
+        <Preference
+            android:key="setHomePageBackground"
+            android:title="@string/change_home_page_background"/>
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="cb_drawertabs"
@@ -32,9 +35,10 @@
             android:defaultValue="false"
             android:key="text_reflow"
             android:title="@string/reflow"/>
-        <Preference
+        <!--<Preference
             android:key="app_theme"
-            android:title="@string/theme"/>
+            android:title="@string/theme"
+            />-->
         <Preference
             android:key="text_size"
             android:title="@string/title_text_size"/>

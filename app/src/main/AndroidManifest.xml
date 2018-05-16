@@ -168,80 +168,8 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/filepaths" />
         </provider>
-
-        //Appsgeyser ad sdk ---------------------------------------------------------
-
-        <meta-data
-            android:name="com.google.android.gms.version"
-            android:value="@integer/google_play_services_version" />
-
-        <activity
-            android:name="com.google.android.gms.ads.AdActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
-            android:screenOrientation="portrait"
-            android:theme="@android:style/Theme.Translucent" />
-        <activity
-            android:name="com.appsgeyser.sdk.BrowserActivity"
-            android:label="Loading..." />
-        <activity android:name="com.appsgeyser.sdk.AdActivity" />
-        <activity
-            android:name="com.inmobi.rendering.InMobiAdActivity"
-            android:configChanges="keyboardHidden|orientation|keyboard|smallestScreenSize|screenSize"
-            android:hardwareAccelerated="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-
-        <receiver
-            android:name="com.inmobi.commons.core.utilities.uid.ImIdShareBroadCastReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.inmobi.share.id" />
-            </intent-filter>
-        </receiver>
-
-        <meta-data
-            android:name="applovin.sdk.key"
-            android:value="-ZSF2wakygzAiT2ruKb6qE7Of7o4QhWOGzeIuE0qv--bX0RQL2WAGdZxmL_A2VZISDaLRb9KZ8x69MWUO1effC" />
-
-        <activity android:name="com.applovin.adview.AppLovinInterstitialActivity" />
-        <activity android:name="com.applovin.adview.AppLovinConfirmationActivity" />
-        <activity
-            android:name="com.jirbo.adcolony.AdColonyOverlay"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" />
-        <activity
-            android:name="com.jirbo.adcolony.AdColonyFullscreen"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
-        <activity
-            android:name="com.jirbo.adcolony.AdColonyBrowser"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
-        <activity
-            android:name="com.startapp.android.publish.list3d.List3DActivity"
-            android:hardwareAccelerated="true"
-            android:theme="@android:style/Theme" />
-        <activity
-            android:name="com.startapp.android.publish.OverlayActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:hardwareAccelerated="true"
-            android:theme="@android:style/Theme.Translucent" />
-        <activity
-            android:name="com.startapp.android.publish.FullScreenActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:hardwareAccelerated="true"
-            android:theme="@android:style/Theme" />
-        <activity
-            android:name="com.silvermob.sdk.ownad.InterstitalActivity"
-            android:hardwareAccelerated="true"
-            android:theme="@android:style/Theme" />
-        <activity
-            android:name="com.silvermob.sdk.ownad.InAppWebView"
-            android:hardwareAccelerated="true"
-            android:theme="@android:style/Theme" />
-        <activity
-            android:name="com.amazon.device.ads.AdActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize" />
+        <service android:name=".service.WeatherJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
     </application>
 
 </manifest>

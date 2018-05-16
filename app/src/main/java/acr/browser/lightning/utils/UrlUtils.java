@@ -23,6 +23,7 @@ import android.webkit.URLUtil;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import acr.browser.lightning.app.BrowserApp;
 import acr.browser.lightning.constant.BookmarkPage;
 import acr.browser.lightning.constant.Constants;
 import acr.browser.lightning.constant.DownloadsPage;
@@ -94,7 +95,9 @@ public class UrlUtils {
             (url.endsWith(BookmarkPage.FILENAME) ||
                 url.endsWith(DownloadsPage.FILENAME) ||
                 url.endsWith(HistoryPage.FILENAME) ||
-                url.endsWith(StartPage.FILENAME));
+                url.endsWith(StartPage.FILENAME) ||
+                    (!BrowserApp.getConfig().getHomePageUrl().equals("") && url.endsWith(BrowserApp.getConfig().getHomePageUrl()))
+            );
     }
 
     /**
@@ -134,6 +137,6 @@ public class UrlUtils {
      * @return true if the url is a start page url, false otherwise.
      */
     public static boolean isStartPageUrl(@Nullable String url) {
-        return url != null && url.startsWith(Constants.FILE) && url.endsWith(StartPage.FILENAME);
+        return url != null && url.startsWith(Constants.FILE) && (url.endsWith(StartPage.FILENAME) || (!BrowserApp.getConfig().getHomePageUrl().equals("") && url.endsWith(BrowserApp.getConfig().getHomePageUrl())));
     }
 }

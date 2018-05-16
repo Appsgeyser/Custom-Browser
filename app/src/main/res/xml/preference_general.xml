@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory android:title="@string/settings_general">
+    <PreferenceCategory android:title="@string/settings_general" android:key="general_settings">
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="cb_flash"
             android:title="@string/flash" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="cb_notification_search_bar"
+            android:title="@string/enable_search_bar_notification" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="cb_notification_weather"
+            android:title="@string/enable_weather_notification" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="cb_ads"

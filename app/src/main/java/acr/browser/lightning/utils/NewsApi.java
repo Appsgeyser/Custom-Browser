@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
-import acr.browser.lightning.R;
 import acr.browser.lightning.domain.News;
 import acr.browser.lightning.domain.NewsCategory;
 
@@ -80,6 +79,25 @@ public class NewsApi {
                         newsCache.put("news", newsCategoryList);
                         lastUpdateTime = new Date().getTime();
                     }
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                } catch (XmlPullParserException | IOException | ParseException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        }.execute();
+
+    }
+
+    public void getTopStoriesNews(final String params, final String countryCode, final NewsCallback callback) {
+
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                try {
+                    List<NewsCategory> newsCategoryList = new ArrayList<NewsCategory>();
+                    loadTopStories(params, countryCode, newsCategoryList, callback);
                 } catch (MalformedURLException e) {
                     throw new RuntimeException(e);
                 } catch (XmlPullParserException | IOException | ParseException e) {
@@ -229,7 +247,10 @@ public class NewsApi {
                     news.setSource(source);
                     news.setImageLink(imageLink);
                     news.setAds(isAds);
-                    newsList.add(news);
+                    //TODO this shitfix should be removed! news api need to be updated
+                    if (!news.getTitle().equals("This RSS feed URL is deprecated")) {
+                        newsList.add(news);
+                    }
                     title = "";
                     description = "";
                     link = "";

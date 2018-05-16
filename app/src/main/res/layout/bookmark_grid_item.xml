@@ -6,7 +6,8 @@
     android:background="?attr/listBackground"
     android:gravity="center_vertical"
     android:orientation="vertical"
-    android:clickable="true">
+    android:clickable="true"
+    android:id="@+id/background">
 
     <FrameLayout
         android:layout_marginTop="8dp"
@@ -37,18 +38,18 @@
     <TextView
         android:id="@+id/textBookmark"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
-        android:layout_marginBottom="8dp"
         android:layout_marginTop="8dp"
         android:ellipsize="end"
         android:fontFamily="sans-serif"
-        android:gravity="center_vertical"
+        android:gravity="center_horizontal|center_vertical"
         android:maxLines="1"
         android:minHeight="?android:attr/listPreferredItemHeightSmall"
         android:singleLine="true"
-        android:textAppearance="?android:attr/textAppearanceListItemSmall"
-        android:textAlignment="center" />
+        android:textAlignment="center"
+        android:textAppearance="?android:attr/textAppearanceListItemSmall" />
 
 </LinearLayout>
